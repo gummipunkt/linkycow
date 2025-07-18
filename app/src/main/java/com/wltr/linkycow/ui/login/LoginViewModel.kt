@@ -40,7 +40,7 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
             val result = ApiClient.login(instanceUrl, loginRequest)
 
             result.onSuccess { response ->
-                sessionRepository.saveSession(response.response.token, instanceUrl)
+                sessionRepository.saveSession(instanceUrl, username, password, response.response.token)
                 _uiState.value = LoginUiState.Success
             }.onFailure { exception ->
                 _uiState.value = LoginUiState.Error(exception.message ?: "An unknown error occurred")

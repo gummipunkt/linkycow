@@ -82,6 +82,11 @@ object ApiClient {
         }
     }
 
+    suspend fun login(instanceUrl: String, username: String, password: String): Result<AuthResponse> {
+        val loginRequest = LoginRequest(username = username, password = password)
+        return login(instanceUrl, loginRequest)
+    }
+
     suspend fun getDashboard(): Result<DashboardResponse> {
         if (instanceUrl.isEmpty() || authToken == null) {
             return Result.failure(Exception("User is not authenticated."))

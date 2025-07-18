@@ -16,6 +16,7 @@ class SessionRepository(private val context: Context) {
     private object PreferencesKeys {
         val AUTH_TOKEN = stringPreferencesKey("auth_token")
         val INSTANCE_URL = stringPreferencesKey("instance_url")
+        val USERNAME = stringPreferencesKey("username")
     }
 
     val authTokenFlow: Flow<String> = context.dataStore.data
@@ -28,6 +29,11 @@ class SessionRepository(private val context: Context) {
             preferences[PreferencesKeys.INSTANCE_URL] ?: ""
         }
 
+    val usernameFlow: Flow<String> = context.dataStore.data
+        .map { preferences ->
+            preferences[PreferencesKeys.USERNAME] ?: ""
+        }
+
     suspend fun saveSession(token: String, url: String) {
         context.dataStore.edit { preferences ->
             preferences[PreferencesKeys.AUTH_TOKEN] = token
@@ -35,10 +41,21 @@ class SessionRepository(private val context: Context) {
         }
     }
 
+    suspend fun saveSession(instanceUrl: String, username: String, password: String, token: String = "") {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.INSTANCE_URL] = instanceUrl
+            preferences[PreferencesKeys.USERNAME] = username
+            if (token.isNotEmpty()) {
+                preferences[PreferencesKeys.AUTH_TOKEN] = token
+            }
+        }
+    }
+
     suspend fun clearSession() {
         context.dataStore.edit { preferences ->
             preferences.remove(PreferencesKeys.AUTH_TOKEN)
             preferences.remove(PreferencesKeys.INSTANCE_URL)
+            preferences.remove(PreferencesKeys.USERNAME)
         }
     }
 } 

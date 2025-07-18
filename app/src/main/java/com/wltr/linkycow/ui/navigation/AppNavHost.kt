@@ -10,6 +10,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.wltr.linkycow.ui.about.AboutScreen
 import com.wltr.linkycow.ui.addlink.AddLinkScreen
 import com.wltr.linkycow.ui.linkdetail.LinkDetailScreen
 import com.wltr.linkycow.ui.login.LoginScreen
@@ -17,6 +18,7 @@ import com.wltr.linkycow.ui.login.LoginUiState
 import com.wltr.linkycow.ui.login.LoginViewModel
 import com.wltr.linkycow.ui.main.MainScreen
 import com.wltr.linkycow.ui.main.MainViewModel
+import com.wltr.linkycow.ui.settings.SettingsScreen
 
 sealed class Screen(val route: String) {
     object Login : Screen("login")
@@ -25,6 +27,8 @@ sealed class Screen(val route: String) {
         fun createRoute(linkId: Int) = "link_detail/$linkId"
     }
     object AddLink : Screen("add_link")
+    object Settings : Screen("settings")
+    object About : Screen("about")
 }
 
 @Composable
@@ -89,6 +93,21 @@ fun AppNavHost(
                         ?.set("refresh", true)
                 }
             )
+        }
+        composable(Screen.Settings.route) {
+            val mainViewModel: MainViewModel = viewModel()
+            SettingsScreen(
+                navController = navController,
+                onLogoutClick = {
+                    mainViewModel.logout()
+                    navController.navigate(Screen.Login.route) {
+                        popUpTo(Screen.Main.route) { inclusive = true }
+                    }
+                }
+            )
+        }
+        composable(Screen.About.route) {
+            AboutScreen(navController = navController)
         }
     }
 } 
