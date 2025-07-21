@@ -98,6 +98,11 @@ dependencies {
     // LiveData for observing state from SavedStateHandle
     implementation("androidx.compose.runtime:runtime-livedata:1.6.8")
 
+    // Coil for image loading
+    implementation("io.coil-kt:coil-compose:2.5.0")
+
+    // Accompanist for WebView
+    implementation("com.google.accompanist:accompanist-webview:0.34.0")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

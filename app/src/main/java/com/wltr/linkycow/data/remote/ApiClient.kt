@@ -200,6 +200,35 @@ object ApiClient {
         }
     }
 
+    suspend fun getLinkPreviewImage(linkId: Int): Result<ByteArray> {
+        if (instanceUrl.isEmpty() || authToken == null) {
+            return Result.failure(Exception("User is not authenticated."))
+        }
+
+        return try {
+            val url = URLBuilder(instanceUrl).apply {
+                path("api", "v1", "archives", linkId.toString())
+                parameters.append("format", "1") // 1 for preview image
+                parameters.append("preview", "true")
+            }.buildString()
+
+            val response = client.get(url) {
+                header("Authorization", "Bearer $authToken")
+            }
+
+            if (response.status.isSuccess()) {
+                Result.success(response.readBytes())
+            } else {
+                val errorBody = response.bodyAsText()
+                Result.failure(Exception("Failed to get image: ${response.status} - $errorBody"))
+            }
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Result.failure(e)
+        }
+    }
+
     suspend fun deleteLink(id: Int): Result<DeleteLinkResponse> {
         if (instanceUrl.isEmpty() || authToken == null) {
             return Result.failure(Exception("User is not authenticated."))
