@@ -19,8 +19,7 @@ sealed class LinkDetailUiState {
         val link: LinkDetailResponse,
         val previewImage: ByteArray? = null,
         val imageError: String? = null,
-        val baseUrl: String = "",
-        val authToken: String = ""
+        val baseUrl: String = ""
     ) : LinkDetailUiState()
     data class Error(val message: String) : LinkDetailUiState()
 }
@@ -53,14 +52,12 @@ class LinkDetailViewModel(application: Application) : AndroidViewModel(applicati
                 _uiState.value = LinkDetailUiState.Loading
             }
             val baseUrl = sessionRepository.instanceUrlFlow.first()
-            val authToken = sessionRepository.authTokenFlow.first()
             val result = ApiClient.getLinkById(linkId)
             result.onSuccess { linkDetail ->
                 // Start with the main data
                 val successState = LinkDetailUiState.Success(
                     link = linkDetail,
-                    baseUrl = baseUrl,
-                    authToken = authToken
+                    baseUrl = baseUrl
                 )
                 _uiState.value = successState
 
