@@ -1,8 +1,8 @@
-# LinkyCow 🐄
+# LinkyCow
 
 LinkyCow is a modern Android application that provides a beautiful and intuitive interface for [Linkwarden](https://linkwarden.app/), the open-source collaborative bookmark manager.
 
-## Features ✨
+## Features
 
 - **Modern Material 3 UI** - Clean, intuitive interface following Android design guidelines
 - **Dashboard View** - Browse all your saved links in an organized list
@@ -15,16 +15,15 @@ LinkyCow is a modern Android application that provides a beautiful and intuitive
 - **Clickable URLs** - Tap any URL to open it in your browser
 - **Auto-Login** - Secure session management with persistent login
 
-## Screenshots 📱
+## Screenshots
 
 | Dashboard | Search | Link Details | Add Link |
 |-----------|--------|--------------|----------|
 | *Coming soon* | *Coming soon* | *Coming soon* | *Coming soon* |
 
-## Installation 📲
+## Installation
 
 ### Requirements
-- Android 10.0 (API level 29) or higher
 - Access to a [Linkwarden](https://linkwarden.app/) instance
 
 ### From Source
@@ -43,56 +42,7 @@ LinkyCow is a modern Android application that provides a beautiful and intuitive
 
 4. Install the APK on your device
 
-## Setup 🛠️
-
-1. **Launch LinkyCow** on your Android device
-2. **Enter your Linkwarden details:**
-   - Linkwarden URL (e.g., `https://your-linkwarden.com`)
-   - Username
-   - Password
-3. **Tap Login** to connect to your Linkwarden instance
-4. **Start managing your links!**
-
-## Usage 💡
-
-### Basic Operations
-- **Browse Links**: View all your links on the main dashboard
-- **Search**: Tap the search icon in the top bar to find specific links
-- **View Details**: Tap any link to see detailed information, tags, and collection
-- **Add Links**: Use the floating action button (+) to add new links manually
-- **Share Links**: Share URLs from other apps directly to LinkyCow
-- **Refresh**: Pull down on the dashboard to refresh your links
-
-### Link Management
-- **Archive**: Tap the archive icon in link details to archive a link
-- **Delete**: Tap the delete icon in link details to permanently remove a link
-- **Open**: Tap any URL to open it in your default browser
-
-## Architecture 🏗️
-
-LinkyCow is built using modern Android development practices:
-
-- **Jetpack Compose** - Modern declarative UI toolkit
-- **MVVM Architecture** - Clean separation of concerns
-- **Kotlin Coroutines** - Asynchronous programming
-- **Ktor Client** - HTTP networking with OkHttp engine
-- **DataStore** - Secure data persistence
-- **Navigation Component** - Type-safe navigation
-- **Material 3** - Latest Material Design components
-
-## API Integration 🔌
-
-LinkyCow integrates with the Linkwarden API:
-
-- **Authentication**: Secure session-based login
-- **Dashboard**: Fetch all links via `/api/v2/dashboard`
-- **Search**: Real-time search via `/api/v1/search`
-- **Link Details**: Detailed information via `/api/v1/links/:id`
-- **Create Links**: Add new links via `/api/v1/links`
-- **Archive**: Archive links via `/api/v1/links/:id/archive`
-- **Delete**: Remove links via `/api/v1/links/:id`
-
-## Development 👨‍💻
+## Development
 
 ### Building from Source
 
@@ -130,7 +80,7 @@ app/
 └── src/main/res/       # Resources (layouts, strings, etc.)
 ```
 
-## Contributing 🤝
+## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
 
@@ -141,41 +91,20 @@ Contributions are welcome! Please feel free to submit a Pull Request. For major 
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## Known Issues 🐛
-
-- Some Android devices may show harmless system warnings in logs
-- Large link collections may take a moment to load initially
-
-## Roadmap 🗺️
+## Roadmap
 
 - [ ] Dark mode support
 - [ ] Bulk operations (select multiple links)
 - [ ] Widget support
 - [ ] Custom themes
-- [ ] Add link features like Tagging, Categories
 - [ ] Add and editing Tags and Categories
+- [ ] Add WebView for Preserved Formats
 
-## Support 💬
-
-If you encounter any issues or have questions:
-
-1. Check the [Issues](https://github.com/gummipunkt/linkycow/issues) page
-2. Create a new issue with detailed information
-3. Include your Android version and device model
-
-## Privacy 🔒
-
-LinkyCow respects your privacy:
-- No data is collected or transmitted to third parties
-- All communication is directly with your Linkwarden instance
-- Login credentials are stored securely on your device
-- No analytics or tracking
-
-## License 📄
+## License
 
 This project is licensed under the GPL-3.0 License - see the [LICENSE](LICENSE) file for details.
 
-## Acknowledgments 🙏
+## Acknowledgments
 
 - [Linkwarden](https://linkwarden.app/) - The amazing bookmark manager that makes this app possible
 
