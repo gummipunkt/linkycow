@@ -32,6 +32,9 @@ import androidx.navigation.NavController
 import com.wltr.linkycow.data.remote.dto.LinkDetailData
 import com.wltr.linkycow.ui.common.ClickableUrlText
 import kotlinx.coroutines.launch
+import com.google.accompanist.web.WebView
+import com.google.accompanist.web.rememberWebViewState
+import com.google.accompanist.web.rememberWebViewNavigator
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -45,6 +48,8 @@ fun LinkDetailScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     var showDeleteDialog by remember { mutableStateOf(false) }
+    var webViewUrl by remember { mutableStateOf<String?>(null) }
+    var authTokenForWebView by remember { mutableStateOf<String?>(null) }
 
     if (showDeleteDialog) {
         AlertDialog(
@@ -66,6 +71,14 @@ fun LinkDetailScreen(
                     Text("Cancel")
                 }
             }
+        )
+    }
+
+    if (webViewUrl != null && authTokenForWebView != null) {
+        WebViewDialog(
+            url = webViewUrl!!,
+            authToken = authTokenForWebView!!,
+            onDismiss = { webViewUrl = null }
         )
     }
 
@@ -137,7 +150,12 @@ fun LinkDetailScreen(
                         previewImage = state.previewImage,
                         imageError = state.imageError,
                         baseUrl = state.baseUrl,
-                        linkId = linkId
+                        authToken = state.authToken,
+                        linkId = linkId,
+                        onPreservedFormatClick = { url, authToken ->
+                            webViewUrl = url
+                            authTokenForWebView = authToken
+                        }
                     )
                 }
             }
@@ -151,7 +169,9 @@ fun LinkDetails(
     previewImage: ByteArray?,
     imageError: String?,
     baseUrl: String,
-    linkId: Int
+    authToken: String,
+    linkId: Int,
+    onPreservedFormatClick: (url: String, authToken: String) -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -495,7 +515,6 @@ fun LinkDetails(
                         fontStyle = FontStyle.Italic
                     )
                 } else {
-                    val uriHandler = LocalUriHandler.current
                     formats.forEach { (format, path, formatCode) ->
                         val url = if (baseUrl.isNotEmpty() && path != null) {
                             "${baseUrl.trimEnd('/')}/api/v1/archives/$linkId?format=$formatCode"
@@ -506,11 +525,7 @@ fun LinkDetails(
                                 .fillMaxWidth()
                                 .clickable(enabled = url != null) {
                                     url?.let {
-                                        android.util.Log.d(
-                                            "LinkDetail",
-                                            "Opening preserved format: $it"
-                                        )
-                                        uriHandler.openUri(it)
+                                        onPreservedFormatClick(it, authToken)
                                     }
                                 },
                             colors = CardDefaults.cardColors(
@@ -579,6 +594,49 @@ fun LinkDetails(
             }
         }
     }
+}
+
+@Composable
+private fun WebViewDialog(url: String, authToken: String, onDismiss: () -> Unit) {
+    val state = rememberWebViewState(url = url, additionalHttpHeaders = mapOf("Authorization" to "Bearer $authToken"))
+    val navigator = rememberWebViewNavigator()
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        modifier = Modifier.fillMaxSize(0.95f),
+        confirmButton = {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row {
+                    IconButton(onClick = { if (navigator.canGoBack) navigator.goBack() }) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    }
+                    IconButton(onClick = { if (navigator.canGoForward) navigator.goForward() }) {
+                        Icon(Icons.Default.ArrowForward, contentDescription = "Forward")
+                    }
+                }
+                TextButton(onClick = onDismiss) {
+                    Text("Close")
+                }
+            }
+        },
+        text = {
+            Column {
+                LinearProgressIndicator(
+                    modifier = Modifier.fillMaxWidth(),
+                    progress = if (state.isLoading) 0f else 1f,
+                )
+                WebView(
+                    state = state,
+                    modifier = Modifier.weight(1f),
+                    navigator = navigator
+                )
+            }
+        }
+    )
 }
 
 @Composable
