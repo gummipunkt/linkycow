@@ -3,6 +3,6 @@ package com.wltr.linkycow.data.remote.dto
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class ApiError(
-    val error: String? = null
+data class TagsResponse(
+    val response: List<TagDto>
 ) 

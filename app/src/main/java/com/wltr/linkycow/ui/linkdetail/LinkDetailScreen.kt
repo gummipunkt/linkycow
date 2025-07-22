@@ -32,6 +32,7 @@ import androidx.navigation.NavController
 import com.wltr.linkycow.data.remote.dto.LinkDetailData
 import com.wltr.linkycow.ui.common.ClickableUrlText
 import kotlinx.coroutines.launch
+import com.wltr.linkycow.ui.navigation.Screen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -110,6 +111,19 @@ fun LinkDetailScreen(
                         enabled = !actionInProgress
                     ) {
                         Icon(Icons.Filled.Delete, contentDescription = "Delete")
+                    }
+                    // Edit-Button
+                    val currentState = uiState
+                    if (currentState is LinkDetailUiState.Success) {
+                        IconButton(
+                            onClick = {
+                                val link = currentState.link.response
+                                navController.navigate(Screen.AddLink.createRoute(link.id))
+                            },
+                            enabled = !actionInProgress
+                        ) {
+                            Icon(Icons.Filled.Edit, contentDescription = "Bearbeiten")
+                        }
                     }
                 }
             )

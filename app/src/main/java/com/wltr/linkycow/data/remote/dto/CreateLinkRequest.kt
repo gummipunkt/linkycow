@@ -4,6 +4,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class CreateLinkRequest(
+    val id: Int? = null, // für Update-Requests
     val url: String,
     val name: String? = null,
     val type: String? = "url", // url, pdf, image
@@ -21,5 +22,6 @@ data class CreateLinkTag(
 @Serializable
 data class CreateLinkCollection(
     val id: Int? = null,
-    val name: String? = null
+    val name: String? = null,
+    val ownerId: Int? = null
 ) 

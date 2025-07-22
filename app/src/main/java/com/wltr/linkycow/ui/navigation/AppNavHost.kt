@@ -19,6 +19,7 @@ import com.wltr.linkycow.ui.login.LoginViewModel
 import com.wltr.linkycow.ui.main.MainScreen
 import com.wltr.linkycow.ui.main.MainViewModel
 import com.wltr.linkycow.ui.settings.SettingsScreen
+import com.wltr.linkycow.data.remote.dto.FullLinkData
 
 sealed class Screen(val route: String) {
     object Login : Screen("login")
@@ -26,7 +27,9 @@ sealed class Screen(val route: String) {
     object LinkDetail : Screen("link_detail/{linkId}") {
         fun createRoute(linkId: Int) = "link_detail/$linkId"
     }
-    object AddLink : Screen("add_link")
+    object AddLink : Screen("add_link?linkId={linkId}") {
+        fun createRoute(linkId: Int? = null) = if (linkId != null) "add_link?linkId=$linkId" else "add_link"
+    }
     object Settings : Screen("settings")
     object About : Screen("about")
 }
@@ -81,17 +84,25 @@ fun AppNavHost(
                 linkId = linkId
             )
         }
-        composable(Screen.AddLink.route) {
+        composable(
+            route = Screen.AddLink.route,
+            arguments = listOf(
+                navArgument("linkId") {
+                    type = NavType.IntType
+                    defaultValue = -1
+                }
+            )
+        ) { backStackEntry ->
+            val linkId = backStackEntry.arguments?.getInt("linkId")?.takeIf { it != -1 }
             AddLinkScreen(
                 onNavigateBack = { navController.popBackStack() },
                 onLinkAdded = {
                     navController.popBackStack()
-                    // This is a bit of a hack to force the MainViewModel to refresh.
-                    // A better solution would involve a shared repository that both screens observe.
                     navController.currentBackStackEntry
                         ?.savedStateHandle
                         ?.set("refresh", true)
-                }
+                },
+                linkId = linkId
             )
         }
         composable(Screen.Settings.route) {

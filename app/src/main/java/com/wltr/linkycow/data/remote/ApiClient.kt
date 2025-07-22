@@ -10,6 +10,10 @@ import com.wltr.linkycow.data.remote.dto.LinkDetailResponse
 import com.wltr.linkycow.data.remote.dto.LoginRequest
 import com.wltr.linkycow.data.remote.dto.LinkResponse
 import com.wltr.linkycow.data.remote.dto.SearchResponse
+import com.wltr.linkycow.data.remote.dto.CollectionDto
+import com.wltr.linkycow.data.remote.dto.TagDto
+import com.wltr.linkycow.data.remote.dto.CollectionsResponse
+import com.wltr.linkycow.data.remote.dto.TagsResponse
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.engine.okhttp.OkHttp
@@ -279,6 +283,87 @@ object ApiClient {
                 Result.failure(Exception(apiError.error))
             }
 
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Result.failure(e)
+        }
+    }
+
+    suspend fun updateLink(linkId: Int, updateRequest: CreateLinkRequest): Result<LinkResponse> {
+        if (instanceUrl.isEmpty() || authToken == null) {
+            return Result.failure(Exception("User is not authenticated."))
+        }
+        return try {
+            val url = URLBuilder(instanceUrl).apply {
+                path("api", "v1", "links", linkId.toString())
+            }.buildString()
+            val response = client.put(url) {
+                header("Authorization", "Bearer $authToken")
+                contentType(ContentType.Application.Json)
+                setBody(updateRequest)
+            }
+            println("[updateLink] Status: ${response.status}")
+            println("[updateLink] Body: ${response.bodyAsText()}")
+            if (response.status.isSuccess()) {
+                Result.success(response.body())
+            } else {
+                val apiError: ApiError = response.body()
+                Result.failure(Exception(apiError.error ?: "Unbekannter Serverfehler"))
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getCollections(): Result<List<CollectionDto>> {
+        if (instanceUrl.isEmpty() || authToken == null) {
+            return Result.failure(Exception("User is not authenticated."))
+        }
+        return try {
+            val url = URLBuilder(instanceUrl).apply {
+                path("api", "v1", "collections")
+            }.buildString()
+            val response = client.get(url) {
+                header("Authorization", "Bearer $authToken")
+                contentType(ContentType.Application.Json)
+            }
+            println("[getCollections] Status: ${response.status}")
+            println("[getCollections] Body: ${response.bodyAsText()}")
+            if (response.status.isSuccess()) {
+                val collectionsResponse: CollectionsResponse = response.body()
+                Result.success(collectionsResponse.response)
+            } else {
+                val apiError: ApiError = response.body()
+                Result.failure(Exception(apiError.error ?: "Unbekannter Serverfehler"))
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getTags(): Result<List<TagDto>> {
+        if (instanceUrl.isEmpty() || authToken == null) {
+            return Result.failure(Exception("User is not authenticated."))
+        }
+        return try {
+            val url = URLBuilder(instanceUrl).apply {
+                path("api", "v1", "tags")
+            }.buildString()
+            val response = client.get(url) {
+                header("Authorization", "Bearer $authToken")
+                contentType(ContentType.Application.Json)
+            }
+            println("[getTags] Status: ${response.status}")
+            println("[getTags] Body: ${response.bodyAsText()}")
+            if (response.status.isSuccess()) {
+                val tagsResponse: TagsResponse = response.body()
+                Result.success(tagsResponse.response)
+            } else {
+                val apiError: ApiError = response.body()
+                Result.failure(Exception(apiError.error ?: "Unbekannter Serverfehler"))
+            }
         } catch (e: Exception) {
             e.printStackTrace()
             Result.failure(e)
