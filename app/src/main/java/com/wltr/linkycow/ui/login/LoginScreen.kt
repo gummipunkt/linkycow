@@ -11,6 +11,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 
 @Composable
@@ -91,14 +92,15 @@ fun LoginScreen(
                 OutlinedTextField(
                     value = instanceUrl,
                     onValueChange = { newValue ->
-                        // Auto-normalize: remove spaces and convert to lowercase
-                        instanceUrl = newValue.replace(" ", "").lowercase()
+                        var url = newValue.replace(" ", "").lowercase()
+                        if (!url.startsWith("https://")) url = "https://" + url.removePrefix("http://")
+                        instanceUrl = url
                     },
-                    label = { Text("Linkwarden URL") },
+                    label = { Text("Server-URL (https)") },
                     placeholder = { Text("https://your-linkwarden.com") },
                     modifier = Modifier.fillMaxWidth(),
                     enabled = !isLoading,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri, imeAction = ImeAction.None),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = MaterialTheme.colorScheme.primary,
                         focusedLabelColor = MaterialTheme.colorScheme.primary,
@@ -110,14 +112,13 @@ fun LoginScreen(
                 OutlinedTextField(
                     value = username,
                     onValueChange = { newValue ->
-                        // Auto-normalize: remove spaces and convert to lowercase
                         username = newValue.replace(" ", "").lowercase()
                     },
                     label = { Text("Username") },
                     placeholder = { Text("your-username") },
                     modifier = Modifier.fillMaxWidth(),
                     enabled = !isLoading,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.None),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = MaterialTheme.colorScheme.primary,
                         focusedLabelColor = MaterialTheme.colorScheme.primary,
@@ -134,7 +135,7 @@ fun LoginScreen(
                     visualTransformation = PasswordVisualTransformation(),
                     modifier = Modifier.fillMaxWidth(),
                     enabled = !isLoading,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.None),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = MaterialTheme.colorScheme.primary,
                         focusedLabelColor = MaterialTheme.colorScheme.primary,
