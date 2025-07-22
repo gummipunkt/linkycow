@@ -1,19 +1,37 @@
 package com.wltr.linkycow.ui.main
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Tag
-import androidx.compose.material3.*
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
@@ -28,11 +46,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.wltr.linkycow.data.remote.dto.Link
-import com.wltr.linkycow.ui.common.ClickableUrlText
+import com.wltr.linkycow.data.remote.dto.CollectionDto
+import com.wltr.linkycow.data.remote.dto.TagDto
+import com.wltr.linkycow.ui.common.LinkItem
 import com.wltr.linkycow.ui.navigation.Screen
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -51,7 +69,14 @@ fun MainScreen(
 
     val pullToRefreshState = rememberPullToRefreshState()
 
-    // Check for the refresh signal from the AddLinkScreen
+    // Effect to handle user-initiated pull-to-refresh
+    LaunchedEffect(pullToRefreshState.isRefreshing) {
+        if (pullToRefreshState.isRefreshing) {
+            viewModel.refreshDashboard()
+        }
+    }
+
+    // Effect to handle the refresh signal from other screens
     val refresh = navController.currentBackStackEntry
         ?.savedStateHandle
         ?.getLiveData<Boolean>("refresh")
@@ -61,6 +86,13 @@ fun MainScreen(
         if (refresh?.value == true) {
             viewModel.refreshDashboard()
             navController.currentBackStackEntry?.savedStateHandle?.remove<Boolean>("refresh")
+        }
+    }
+
+    // Effect to stop the refresh indicator when the ViewModel is no longer loading
+    LaunchedEffect(isRefreshing) {
+        if (!isRefreshing) {
+            pullToRefreshState.endRefresh()
         }
     }
 
@@ -90,98 +122,122 @@ fun MainScreen(
             }
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = { navController.navigate(Screen.AddLink.route) }) {
+            FloatingActionButton(onClick = { navController.navigate(Screen.AddLink.createRoute(null)) }) {
                 Icon(Icons.Filled.Add, contentDescription = "Add Link")
             }
         }
     ) { paddingValues ->
+        val currentState = uiState
+
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
                 .nestedScroll(pullToRefreshState.nestedScrollConnection)
         ) {
-            val linksToShow = if (searchQuery.isBlank()) {
-                (uiState as? DashboardUiState.Success)?.links
-            } else {
-                searchResults
-            }
-
-            if (isSearching) {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-            } else {
-                when (val state = uiState) {
-                    is DashboardUiState.Loading -> {
-                        Box(modifier = Modifier.fillMaxSize()) {
-                            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-                        }
-                    }
-
-                    is DashboardUiState.Error -> {
-                        Text(
-                            text = state.message,
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .wrapContentHeight(Alignment.CenterVertically),
-                            color = MaterialTheme.colorScheme.error
+            // Content area that is replaced by a loading spinner on initial load
+            when (currentState) {
+                is DashboardUiState.Loading -> {
+                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                }
+                is DashboardUiState.Error -> {
+                    Text(
+                        text = currentState.message,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .padding(16.dp)
+                    )
+                }
+                is DashboardUiState.Success -> {
+                    // Main content with filter chips and link list
+                    Column(modifier = Modifier.fillMaxSize()) {
+                        FilterChips(
+                            collections = currentState.collections,
+                            tags = currentState.tags,
+                            onFilterSelected = { filter -> viewModel.setFilter(filter) },
+                            selectedCollectionId = viewModel.selectedCollectionId,
+                            selectedTagId = viewModel.selectedTagId,
+                            isEnabled = !isRefreshing
                         )
-                    }
 
-                    is DashboardUiState.Success -> {
-                        if (pullToRefreshState.isRefreshing) {
-                            LaunchedEffect(true) {
-                                viewModel.refreshDashboard()
+                        val linksToShow = if (searchQuery.isBlank()) currentState.links else searchResults
+                        if (linksToShow.isEmpty() && !isSearching) {
+                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                Text(
+                                    text = if (searchQuery.isBlank()) "No links found." else "No results for '$searchQuery'"
+                                )
                             }
-                        }
-
-                        LaunchedEffect(isRefreshing) {
-                            if (isRefreshing) {
-                                pullToRefreshState.startRefresh()
-                            } else {
-                                pullToRefreshState.endRefresh()
-                            }
-                        }
-
-                        if (linksToShow.isNullOrEmpty() && !isSearching) {
-                            Text(
-                                text = if (searchQuery.isBlank()) "No links found." else "No results for '$searchQuery'",
-                                modifier = Modifier.align(Alignment.Center)
-                            )
                         } else {
                             LazyColumn(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .background(
-                                        brush = androidx.compose.ui.graphics.Brush.verticalGradient(
-                                            colors = listOf(
-                                                MaterialTheme.colorScheme.background,
-                                                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.05f)
-                                            )
-                                        )
-                                    ),
-                                contentPadding = PaddingValues(16.dp),
+                                modifier = Modifier.fillMaxSize(),
+                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                                 verticalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
-                                linksToShow?.let {
-                                    items(it) { link ->
-                                        LinkItem(
-                                            link = link,
-                                            onClick = {
-                                                navController.navigate(Screen.LinkDetail.createRoute(link.id))
-                                            }
-                                        )
-                                    }
+                                items(linksToShow) { link ->
+                                    LinkItem(
+                                        link = link,
+                                        onLinkClick = { linkId ->
+                                            navController.navigate(Screen.LinkDetail.createRoute(linkId))
+                                        }
+                                    )
                                 }
                             }
                         }
                     }
                 }
             }
+            // Separate loading indicator for the search functionality
+            if (isSearching && searchQuery.isNotBlank()) {
+                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+            }
 
             PullToRefreshContainer(
                 modifier = Modifier.align(Alignment.TopCenter),
                 state = pullToRefreshState,
             )
+        }
+    }
+}
+
+@Composable
+fun FilterChips(
+    collections: List<CollectionDto>,
+    tags: List<TagDto>,
+    onFilterSelected: (Any?) -> Unit,
+    selectedCollectionId: Int?,
+    selectedTagId: Int?,
+    isEnabled: Boolean
+) {
+    Column(modifier = Modifier.padding(vertical = 8.dp)) {
+        LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(horizontal = 16.dp)
+        ) {
+            items(collections) { collection ->
+                FilterChip(
+                    enabled = isEnabled,
+                    selected = collection.id == selectedCollectionId,
+                    onClick = { onFilterSelected(collection) },
+                    label = { Text(collection.name) },
+                    leadingIcon = { Icon(Icons.Default.Folder, contentDescription = null, modifier = Modifier.size(18.dp)) }
+                )
+            }
+        }
+        Spacer(modifier = Modifier.height(4.dp))
+        LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(horizontal = 16.dp)
+        ) {
+            items(tags) { tag ->
+                FilterChip(
+                    enabled = isEnabled,
+                    selected = tag.id == selectedTagId,
+                    onClick = { onFilterSelected(tag) },
+                    label = { Text(tag.name) },
+                    leadingIcon = { Icon(Icons.Default.Tag, contentDescription = null, modifier = Modifier.size(18.dp)) }
+                )
+            }
         }
     }
 }
@@ -213,183 +269,4 @@ fun SearchTopAppBar(
             }
         }
     )
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun LinkItem(link: Link, onClick: () -> Unit) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 4.dp),
-        onClick = onClick,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant,
-            contentColor = MaterialTheme.colorScheme.onSurfaceVariant
-        ),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 4.dp,
-            pressedElevation = 2.dp
-        ),
-        shape = MaterialTheme.shapes.large
-    ) {
-        Column(
-            modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            // Header row with title and optional type/icon
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Top
-            ) {
-                // Title with gradient-like styling
-                Text(
-                    text = link.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
-                    modifier = Modifier.weight(1f)
-                )
-                
-                // Type indicator if available
-                link.type?.let { type ->
-                    Card(
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-                        ),
-                        shape = MaterialTheme.shapes.small
-                    ) {
-                        Text(
-                            text = type.uppercase(),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                        )
-                    }
-                }
-            }
-            
-            // URL with subtle styling
-            ClickableUrlText(
-                url = link.url,
-                style = MaterialTheme.typography.bodySmall.copy(
-                    color = MaterialTheme.colorScheme.secondary
-                )
-            )
-            
-            // Description if available
-            if (link.description != null) {
-                Text(
-                    text = link.description,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    lineHeight = 20.sp
-                )
-            }
-            
-            // Tags if available
-            if (!link.tags.isNullOrEmpty()) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = androidx.compose.material.icons.Icons.Default.Tag,
-                        contentDescription = "Tags",
-                        tint = MaterialTheme.colorScheme.tertiary,
-                        modifier = Modifier.size(14.dp)
-                    )
-                    
-                    androidx.compose.foundation.lazy.LazyRow(
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        items(minOf(link.tags.size, 3)) { index -> // Show max 3 tags
-                            val tag = link.tags[index]
-                            AssistChip(
-                                onClick = { },
-                                label = { 
-                                    Text(
-                                        tag.name,
-                                        style = MaterialTheme.typography.labelSmall
-                                    )
-                                },
-                                colors = AssistChipDefaults.assistChipColors(
-                                    containerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.2f),
-                                    labelColor = MaterialTheme.colorScheme.tertiary
-                                ),
-                                modifier = Modifier.height(24.dp)
-                            )
-                        }
-                        
-                        // Show "+" indicator if there are more tags
-                        if (link.tags.size > 3) {
-                            item {
-                                Card(
-                                    colors = CardDefaults.cardColors(
-                                        containerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f)
-                                    ),
-                                    shape = MaterialTheme.shapes.small,
-                                    modifier = Modifier.height(24.dp)
-                                ) {
-                                    Text(
-                                        text = "+${link.tags.size - 3}",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.tertiary,
-                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp)
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            
-            // Collection if available
-            link.collection?.let { collection ->
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = androidx.compose.material.icons.Icons.Default.Folder,
-                        contentDescription = "Collection",
-                        tint = MaterialTheme.colorScheme.secondary,
-                        modifier = Modifier.size(14.dp)
-                    )
-                    
-                    Card(
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f)
-                        ),
-                        shape = MaterialTheme.shapes.small
-                    ) {
-                        Text(
-                            text = collection.name,
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.secondary,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                        )
-                    }
-                }
-            }
-            
-            // Add visual interest with a subtle divider
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(2.dp)
-                    .background(
-                        brush = androidx.compose.ui.graphics.Brush.horizontalGradient(
-                            colors = listOf(
-                                MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
-                                MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
-                                androidx.compose.ui.graphics.Color.Transparent
-                            )
-                        ),
-                        shape = MaterialTheme.shapes.small
-                    )
-            )
-        }
-    }
 } 

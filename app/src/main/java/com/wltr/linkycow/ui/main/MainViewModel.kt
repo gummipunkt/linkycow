@@ -1,24 +1,32 @@
 package com.wltr.linkycow.ui.main
 
 import android.app.Application
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.wltr.linkycow.data.local.SessionRepository
 import com.wltr.linkycow.data.remote.ApiClient
+import com.wltr.linkycow.data.remote.dto.CollectionDto
 import com.wltr.linkycow.data.remote.dto.Link
+import com.wltr.linkycow.data.remote.dto.TagDto
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.debounce
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 sealed class DashboardUiState {
     object Loading : DashboardUiState()
-    data class Success(val links: List<Link>) : DashboardUiState()
+    data class Success(
+        val links: List<Link>,
+        val collections: List<CollectionDto>,
+        val tags: List<TagDto>
+    ) : DashboardUiState()
     data class Error(val message: String) : DashboardUiState()
 }
 
@@ -26,118 +34,149 @@ sealed class DashboardUiState {
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val sessionRepository = SessionRepository(application)
+
     private val _uiState = MutableStateFlow<DashboardUiState>(DashboardUiState.Loading)
-    val uiState: StateFlow<DashboardUiState> = _uiState
+    val uiState: StateFlow<DashboardUiState> = _uiState.asStateFlow()
 
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
 
-    private val _searchQuery = MutableStateFlow("")
-    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
-
+    val searchQuery = MutableStateFlow("")
     private val _searchResults = MutableStateFlow<List<Link>>(emptyList())
-    val searchResults: StateFlow<List<Link>> = _searchResults.asStateFlow()
+    val searchResults = _searchResults.asStateFlow()
 
     private val _isSearching = MutableStateFlow(false)
     val isSearching: StateFlow<Boolean> = _isSearching.asStateFlow()
 
+    var selectedCollectionId by mutableStateOf<Int?>(null)
+        private set
+    var selectedTagId by mutableStateOf<Int?>(null)
+        private set
+
     init {
-        loadDashboard()
+        loadDashboardData(isRefresh = false)
 
         viewModelScope.launch {
-            _searchQuery
-                .debounce(500) // Wait for 500ms of no new input
+            searchQuery
+                .debounce(300)
+                .distinctUntilChanged()
                 .collect { query ->
                     if (query.isBlank()) {
                         _searchResults.value = emptyList()
                         _isSearching.value = false
                     } else {
-                        _isSearching.value = true
                         performSearch(query)
                     }
                 }
         }
-
-        // Auto-refresh when the app starts
-        viewModelScope.launch {
-            // Wait a moment for the initial load to complete, then refresh
-            kotlinx.coroutines.delay(1000)
-            refreshDashboard()
-        }
     }
 
-    private fun loadDashboard() {
+    fun refreshDashboard() {
+        loadDashboardData(isRefresh = true)
+    }
+    
+    private fun loadDashboardData(isRefresh: Boolean) {
         viewModelScope.launch {
-            _uiState.value = DashboardUiState.Loading
-            // First, get the session info
+            if (_isRefreshing.value) return@launch
+
+            _isRefreshing.value = true
+
+            // Only set full-screen loading state if we don't have data yet.
+            // This prevents the screen from blanking out on a pull-to-refresh.
+            val hasData = _uiState.value is DashboardUiState.Success
+            if (!hasData) {
+                _uiState.value = DashboardUiState.Loading
+            }
+
+            // Reset filters on any full load/refresh
+            if (!isRefresh) { // Maybe keep filters on refresh? For now, clear them.
+                 selectedCollectionId = null
+                 selectedTagId = null
+            }
+
             val token = sessionRepository.authTokenFlow.first()
             val url = sessionRepository.instanceUrlFlow.first()
-
-            if (token.isEmpty() || url.isEmpty()) {
-                _uiState.value = DashboardUiState.Error("Session not found.")
-                return@launch
-            }
-
-            // Set auth for the ApiClient
             ApiClient.setAuth(url, token)
 
-            // Now, get the dashboard
-            val result = ApiClient.getDashboard()
-            result.onSuccess { dashboardResponse ->
-                _uiState.value = DashboardUiState.Success(dashboardResponse.data.links)
-            }.onFailure { error ->
-                _uiState.value = DashboardUiState.Error(error.message ?: "An unknown error occurred")
+            try {
+                val linksResult = ApiClient.getDashboard()
+                val collectionsResult = ApiClient.getCollections()
+                val tagsResult = ApiClient.getTags()
+
+                if (linksResult.isSuccess && collectionsResult.isSuccess && tagsResult.isSuccess) {
+                    _uiState.value = DashboardUiState.Success(
+                        links = linksResult.getOrThrow().data.links,
+                        collections = collectionsResult.getOrThrow(),
+                        tags = tagsResult.getOrThrow()
+                    )
+                } else {
+                    val error = linksResult.exceptionOrNull()?.message
+                        ?: collectionsResult.exceptionOrNull()?.message
+                        ?: tagsResult.exceptionOrNull()?.message
+                        ?: "An unknown error occurred"
+                    if (!hasData) {
+                         _uiState.value = DashboardUiState.Error(error)
+                    }
+                    // If it was a refresh and it failed, we just stop the indicator
+                    // but keep the old data. Maybe show a snackbar.
+                }
+            } catch (e: Exception) {
+                if (!hasData) {
+                    _uiState.value = DashboardUiState.Error(e.message ?: "An unexpected error occurred")
+                }
+            } finally {
+                _isRefreshing.value = false
             }
         }
     }
 
-    fun onSearchQueryChanged(query: String) {
-        _searchQuery.value = query
+    fun setFilter(filter: Any?) {
+        viewModelScope.launch {
+            val currentState = _uiState.value
+            if (currentState !is DashboardUiState.Success) return@launch
+
+            val oldSelectedCollectionId = selectedCollectionId
+            val oldSelectedTagId = selectedTagId
+
+            // Toggle logic
+            val newCollectionId = if (filter is CollectionDto) if(filter.id == oldSelectedCollectionId) null else filter.id else null
+            val newTagId = if (filter is TagDto) if(filter.id == oldSelectedTagId) null else filter.id else null
+
+            selectedCollectionId = newCollectionId
+            selectedTagId = if (newCollectionId == null) newTagId else null // Only one can be active
+
+            if (selectedCollectionId == null && selectedTagId == null) {
+                loadDashboardData(isRefresh = true) // Reload all links
+                return@launch
+            }
+            
+            _isRefreshing.value = true
+            
+            val result = if (selectedCollectionId != null) {
+                ApiClient.getLinksByCollection(selectedCollectionId!!)
+            } else {
+                ApiClient.getLinksByTag(selectedTagId!!)
+            }
+
+            result.onSuccess { filteredResponse ->
+                 _uiState.value = currentState.copy(links = filteredResponse.response)
+            }.onFailure {
+                // Keep old data on failure
+            }
+            _isRefreshing.value = false
+        }
     }
 
     private fun performSearch(query: String) {
         viewModelScope.launch {
+            _isSearching.value = true
             val result = ApiClient.searchLinks(query)
-            result.onSuccess { searchResponse ->
-                _searchResults.value = searchResponse.data.links
-            }.onFailure { error ->
-                // Optionally, handle search errors in the UI
-                _searchResults.value = emptyList()
+            result.onSuccess {
+                _searchResults.value = it.data.links
+            }.onFailure {
+                // Optionally handle search error state
             }
             _isSearching.value = false
-        }
-    }
-
-    fun refreshDashboard() {
-        viewModelScope.launch {
-            _isRefreshing.value = true
-            // First, get the session info
-            val token = sessionRepository.authTokenFlow.first()
-            val url = sessionRepository.instanceUrlFlow.first()
-
-            if (token.isEmpty() || url.isEmpty()) {
-                _uiState.value = DashboardUiState.Error("Session not found.")
-                _isRefreshing.value = false
-                return@launch
-            }
-
-            // Set auth for the ApiClient
-            ApiClient.setAuth(url, token)
-
-            // Now, get the dashboard
-            val result = ApiClient.getDashboard()
-            result.onSuccess { dashboardResponse ->
-                _uiState.update {
-                    if (it is DashboardUiState.Success) {
-                        it.copy(links = dashboardResponse.data.links)
-                    } else {
-                        DashboardUiState.Success(dashboardResponse.data.links)
-                    }
-                }
-            }.onFailure {
-                // Optionally handle refresh error, e.g., show a snackbar
-            }
-            _isRefreshing.value = false
         }
     }
 
@@ -146,5 +185,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             sessionRepository.clearSession()
             ApiClient.clearAuth()
         }
+    }
+
+    fun onSearchQueryChanged(query: String) {
+        searchQuery.value = query
     }
 } 

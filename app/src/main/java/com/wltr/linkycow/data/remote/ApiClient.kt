@@ -14,6 +14,7 @@ import com.wltr.linkycow.data.remote.dto.CollectionDto
 import com.wltr.linkycow.data.remote.dto.TagDto
 import com.wltr.linkycow.data.remote.dto.CollectionsResponse
 import com.wltr.linkycow.data.remote.dto.TagsResponse
+import com.wltr.linkycow.data.remote.dto.FilteredLinksResponse
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.engine.okhttp.OkHttp
@@ -363,6 +364,56 @@ object ApiClient {
             } else {
                 val apiError: ApiError = response.body()
                 Result.failure(Exception(apiError.error ?: "Unbekannter Serverfehler"))
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getLinksByCollection(collectionId: Int): Result<FilteredLinksResponse> {
+        if (instanceUrl.isEmpty() || authToken == null) {
+            return Result.failure(Exception("User is not authenticated."))
+        }
+        return try {
+            val url = URLBuilder(instanceUrl).apply {
+                path("api", "v1", "links")
+                parameters.append("collectionId", collectionId.toString())
+            }.buildString()
+            val response = client.get(url) {
+                header("Authorization", "Bearer $authToken")
+                contentType(ContentType.Application.Json)
+            }
+            if (response.status.isSuccess()) {
+                Result.success(response.body())
+            } else {
+                val apiError: ApiError = response.body()
+                Result.failure(Exception(apiError.error ?: "Unknown server error"))
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getLinksByTag(tagId: Int): Result<FilteredLinksResponse> {
+        if (instanceUrl.isEmpty() || authToken == null) {
+            return Result.failure(Exception("User is not authenticated."))
+        }
+        return try {
+            val url = URLBuilder(instanceUrl).apply {
+                path("api", "v1", "links")
+                parameters.append("tagId", tagId.toString())
+            }.buildString()
+            val response = client.get(url) {
+                header("Authorization", "Bearer $authToken")
+                contentType(ContentType.Application.Json)
+            }
+            if (response.status.isSuccess()) {
+                Result.success(response.body())
+            } else {
+                val apiError: ApiError = response.body()
+                Result.failure(Exception(apiError.error ?: "Unknown server error"))
             }
         } catch (e: Exception) {
             e.printStackTrace()

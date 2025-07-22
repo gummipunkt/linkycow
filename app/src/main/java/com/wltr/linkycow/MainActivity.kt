@@ -40,6 +40,7 @@ class MainActivity : ComponentActivity() {
                     // authToken is null only during the initial loading phase.
                     // After that, it will be an empty string or the token itself.
                     if (authToken != null) {
+                        // Determine start destination
                         val startDestination = if (authToken!!.isNotEmpty()) {
                             Screen.Main.route
                         } else {

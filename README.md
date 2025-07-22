@@ -99,6 +99,7 @@ Contributions are welcome! Please feel free to submit a Pull Request. For major 
 - [ ] Custom themes
 - [ ] Add and editing Tags and Categories
 - [ ] Add WebView for Preserved Formats
+- [ ] Add infinite scrolling
 
 ## License
 

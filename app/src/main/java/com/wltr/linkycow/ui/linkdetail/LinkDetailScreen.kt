@@ -151,7 +151,8 @@ fun LinkDetailScreen(
                         previewImage = state.previewImage,
                         imageError = state.imageError,
                         baseUrl = state.baseUrl,
-                        linkId = linkId
+                        linkId = linkId,
+                        navController = navController
                     )
                 }
             }
@@ -166,6 +167,7 @@ fun LinkDetails(
     imageError: String?,
     baseUrl: String,
     linkId: Int,
+    navController: NavController
 ) {
     Column(
         modifier = Modifier
@@ -210,20 +212,6 @@ fun LinkDetails(
                             .weight(1f)
                             .padding(end = 8.dp)
                     )
-
-                    Card(
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
-                        ),
-                        shape = MaterialTheme.shapes.small
-                    ) {
-                        Text(
-                            text = link.type.uppercase(),
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                        )
-                    }
                 }
 
                 Card(
@@ -357,7 +345,17 @@ fun LinkDetails(
 
         if(link.collection != null) {
             Card(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        navController.navigate(
+                            Screen.FilteredLinks.createRoute(
+                                filterType = "collection",
+                                filterId = link.collection.id,
+                                filterName = link.collection.name
+                            )
+                        )
+                    },
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f),
                     contentColor = MaterialTheme.colorScheme.onPrimaryContainer
@@ -446,7 +444,15 @@ fun LinkDetails(
                     ) {
                         items(link.tags) { tag ->
                             AssistChip(
-                                onClick = { /*TODO*/ },
+                                onClick = {
+                                    navController.navigate(
+                                        Screen.FilteredLinks.createRoute(
+                                            filterType = "tag",
+                                            filterId = tag.id,
+                                            filterName = tag.name
+                                        )
+                                    )
+                                },
                                 label = {
                                     Text(
                                         tag.name,
