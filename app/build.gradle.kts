@@ -8,7 +8,7 @@ plugins {
 
 android {
     namespace = "com.wltr.linkycow"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.wltr.linkycow"
