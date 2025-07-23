@@ -27,39 +27,56 @@ import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.json.Json
 
+/**
+ * Singleton API client for Linkwarden server communication.
+ * Handles all HTTP requests with proper authentication, error handling, and JSON serialization.
+ */
 object ApiClient {
 
-    // These should be empty in a real app and set after login
+    // Authentication state - initialized after successful login
     private var instanceUrl: String = ""
     private var authToken: String? = null
 
+    // HTTP client configuration with OkHttp engine
     private val client = HttpClient(OkHttp) {
-        expectSuccess = false // We want to handle HTTP errors manually
+        expectSuccess = false // Manual HTTP error handling for better user feedback
 
         install(ContentNegotiation) {
             json(Json {
                 prettyPrint = true
-                isLenient = true
-                ignoreUnknownKeys = true
+                isLenient = true // Allow flexible JSON parsing
+                ignoreUnknownKeys = true // Ignore API fields we don't need
             })
         }
 
         install(Logging) {
             logger = Logger.DEFAULT
-            level = LogLevel.ALL
+            level = LogLevel.INFO // TODO: Reduce to LogLevel.INFO in production
         }
     }
 
+    /**
+     * Set authentication credentials for API requests
+     */
     fun setAuth(url: String, token: String) {
         this.instanceUrl = url
         this.authToken = token
     }
 
+    /**
+     * Clear authentication state on logout
+     */
     fun clearAuth() {
         this.instanceUrl = ""
         this.authToken = null
     }
 
+    /**
+     * Authenticate with Linkwarden server
+     * @param instanceUrl The server URL (e.g., "https://links.example.com")
+     * @param loginRequest Login credentials
+     * @return Result containing auth response or error
+     */
     suspend fun login(instanceUrl: String, loginRequest: LoginRequest): Result<AuthResponse> {
         return try {
             val url = URLBuilder(instanceUrl).apply {
@@ -81,132 +98,88 @@ object ApiClient {
             }
 
         } catch (e: Exception) {
-            e.printStackTrace()
-            // Catch other exceptions like network errors
             Result.failure(e)
         }
     }
 
+    /**
+     * Convenience method for login with username/password
+     */
     suspend fun login(instanceUrl: String, username: String, password: String): Result<AuthResponse> {
         val loginRequest = LoginRequest(username = username, password = password)
         return login(instanceUrl, loginRequest)
     }
 
+    /**
+     * Get dashboard data including recent links
+     */
     suspend fun getDashboard(): Result<DashboardResponse> {
-        if (instanceUrl.isEmpty() || authToken == null) {
-            return Result.failure(Exception("User is not authenticated."))
-        }
-
-        return try {
+        return executeAuthenticatedRequest {
             val url = URLBuilder(instanceUrl).apply {
                 path("api", "v2", "dashboard")
             }.buildString()
 
-            val response = client.get(url) {
-                header("Authorization", "Bearer $authToken")
+            client.get(url) {
+                addAuthHeader()
                 contentType(ContentType.Application.Json)
             }
-
-            if (response.status.isSuccess()) {
-                Result.success(response.body())
-            } else {
-                val apiError: ApiError = response.body()
-                Result.failure(Exception(apiError.error))
-            }
-
-        } catch (e: Exception) {
-            e.printStackTrace()
-            Result.failure(e)
         }
     }
 
+    /**
+     * Get detailed information for a specific link
+     */
     suspend fun getLinkById(id: Int): Result<LinkDetailResponse> {
-        if (instanceUrl.isEmpty() || authToken == null) {
-            return Result.failure(Exception("User is not authenticated."))
-        }
-
-        return try {
+        return executeAuthenticatedRequest {
             val url = URLBuilder(instanceUrl).apply {
                 path("api", "v1", "links", id.toString())
             }.buildString()
 
-            val response = client.get(url) {
-                header("Authorization", "Bearer $authToken")
+            client.get(url) {
+                addAuthHeader()
                 contentType(ContentType.Application.Json)
             }
-
-            if (response.status.isSuccess()) {
-                Result.success(response.body())
-            } else {
-                val apiError: ApiError = response.body()
-                Result.failure(Exception(apiError.error))
-            }
-
-        } catch (e: Exception) {
-            e.printStackTrace()
-            Result.failure(e)
         }
     }
 
+    /**
+     * Archive a link (preserve content snapshot)
+     */
     suspend fun archiveLink(id: Int): Result<ArchiveLinkResponse> {
-        if (instanceUrl.isEmpty() || authToken == null) {
-            return Result.failure(Exception("User is not authenticated."))
-        }
-
-        return try {
+        return executeAuthenticatedRequest {
             val url = URLBuilder(instanceUrl).apply {
                 path("api", "v1", "links", id.toString(), "archive")
             }.buildString()
 
-            val response = client.put(url) {
-                header("Authorization", "Bearer $authToken")
+            client.put(url) {
+                addAuthHeader()
                 contentType(ContentType.Application.Json)
             }
-
-            if (response.status.isSuccess()) {
-                Result.success(response.body())
-            } else {
-                val apiError: ApiError = response.body()
-                Result.failure(Exception(apiError.error))
-            }
-
-        } catch (e: Exception) {
-            e.printStackTrace()
-            Result.failure(e)
         }
     }
 
+    /**
+     * Search links by query string
+     */
     suspend fun searchLinks(query: String): Result<SearchResponse> {
-        if (instanceUrl.isEmpty() || authToken == null) {
-            return Result.failure(Exception("User is not authenticated."))
-        }
-
-        return try {
+        return executeAuthenticatedRequest {
             val url = URLBuilder(instanceUrl).apply {
                 path("api", "v1", "search")
                 parameters.append("searchQueryString", query)
             }.buildString()
 
-            val response = client.get(url) {
-                header("Authorization", "Bearer $authToken")
+            client.get(url) {
+                addAuthHeader()
                 contentType(ContentType.Application.Json)
             }
-
-            if (response.status.isSuccess()) {
-                Result.success(response.body())
-            } else {
-                val apiError: ApiError = response.body()
-                Result.failure(Exception(apiError.error))
-            }
-
-        } catch (e: Exception) {
-            e.printStackTrace()
-            Result.failure(e)
         }
     }
 
+    /**
+     * Get preview image for a link
+     */
     suspend fun getLinkPreviewImage(linkId: Int): Result<ByteArray> {
-        if (instanceUrl.isEmpty() || authToken == null) {
+        if (!isAuthenticated()) {
             return Result.failure(Exception("User is not authenticated."))
         }
 
@@ -218,7 +191,7 @@ object ApiClient {
             }.buildString()
 
             val response = client.get(url) {
-                header("Authorization", "Bearer $authToken")
+                addAuthHeader()
             }
 
             if (response.status.isSuccess()) {
@@ -229,219 +202,177 @@ object ApiClient {
             }
 
         } catch (e: Exception) {
-            e.printStackTrace()
             Result.failure(e)
         }
     }
 
+    /**
+     * Delete a link permanently
+     */
     suspend fun deleteLink(id: Int): Result<DeleteLinkResponse> {
-        if (instanceUrl.isEmpty() || authToken == null) {
-            return Result.failure(Exception("User is not authenticated."))
-        }
-
-        return try {
+        return executeAuthenticatedRequest {
             val url = URLBuilder(instanceUrl).apply {
                 path("api", "v1", "links", id.toString())
             }.buildString()
 
-            val response = client.delete(url) {
-                header("Authorization", "Bearer $authToken")
+            client.delete(url) {
+                addAuthHeader()
             }
-
-            if (response.status.isSuccess()) {
-                Result.success(response.body())
-            } else {
-                val apiError: ApiError = response.body()
-                Result.failure(Exception(apiError.error))
-            }
-
-        } catch (e: Exception) {
-            e.printStackTrace()
-            Result.failure(e)
         }
     }
 
+    /**
+     * Create a new link
+     */
     suspend fun createLink(createLinkRequest: CreateLinkRequest): Result<LinkResponse> {
-        if (instanceUrl.isEmpty() || authToken == null) {
-            return Result.failure(Exception("User is not authenticated."))
-        }
-
-        return try {
+        return executeAuthenticatedRequest {
             val url = URLBuilder(instanceUrl).apply {
                 path("api", "v1", "links")
             }.buildString()
 
-            val response = client.post(url) {
-                header("Authorization", "Bearer $authToken")
+            client.post(url) {
+                addAuthHeader()
                 contentType(ContentType.Application.Json)
                 setBody(createLinkRequest)
             }
-
-            if (response.status.isSuccess()) {
-                Result.success(response.body())
-            } else {
-                val apiError: ApiError = response.body()
-                Result.failure(Exception(apiError.error))
-            }
-
-        } catch (e: Exception) {
-            e.printStackTrace()
-            Result.failure(e)
         }
     }
 
+    /**
+     * Update an existing link
+     */
     suspend fun updateLink(linkId: Int, updateRequest: CreateLinkRequest): Result<LinkResponse> {
-        if (instanceUrl.isEmpty() || authToken == null) {
-            return Result.failure(Exception("User is not authenticated."))
-        }
-        return try {
+        return executeAuthenticatedRequest {
             val url = URLBuilder(instanceUrl).apply {
                 path("api", "v1", "links", linkId.toString())
             }.buildString()
-            val response = client.put(url) {
-                header("Authorization", "Bearer $authToken")
+            
+            client.put(url) {
+                addAuthHeader()
                 contentType(ContentType.Application.Json)
                 setBody(updateRequest)
             }
-            println("[updateLink] Status: ${response.status}")
-            println("[updateLink] Body: ${response.bodyAsText()}")
-            if (response.status.isSuccess()) {
-                Result.success(response.body())
-            } else {
-                val apiError: ApiError = response.body()
-                Result.failure(Exception(apiError.error ?: "Unbekannter Serverfehler"))
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            Result.failure(e)
         }
     }
 
+    /**
+     * Get all available collections/categories
+     */
     suspend fun getCollections(): Result<List<CollectionDto>> {
-        if (instanceUrl.isEmpty() || authToken == null) {
-            return Result.failure(Exception("User is not authenticated."))
-        }
-        return try {
+        return executeAuthenticatedRequest<CollectionsResponse> {
             val url = URLBuilder(instanceUrl).apply {
                 path("api", "v1", "collections")
             }.buildString()
-            val response = client.get(url) {
-                header("Authorization", "Bearer $authToken")
+            
+            client.get(url) {
+                addAuthHeader()
                 contentType(ContentType.Application.Json)
             }
-            println("[getCollections] Status: ${response.status}")
-            println("[getCollections] Body: ${response.bodyAsText()}")
-            if (response.status.isSuccess()) {
-                val collectionsResponse: CollectionsResponse = response.body()
-                Result.success(collectionsResponse.response)
-            } else {
-                val apiError: ApiError = response.body()
-                Result.failure(Exception(apiError.error ?: "Unbekannter Serverfehler"))
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            Result.failure(e)
-        }
+        }.map { it.response }
     }
 
+    /**
+     * Get all available tags
+     */
     suspend fun getTags(): Result<List<TagDto>> {
-        if (instanceUrl.isEmpty() || authToken == null) {
-            return Result.failure(Exception("User is not authenticated."))
-        }
-        return try {
+        return executeAuthenticatedRequest<TagsResponse> {
             val url = URLBuilder(instanceUrl).apply {
                 path("api", "v1", "tags")
             }.buildString()
-            val response = client.get(url) {
-                header("Authorization", "Bearer $authToken")
+            
+            client.get(url) {
+                addAuthHeader()
                 contentType(ContentType.Application.Json)
             }
-            println("[getTags] Status: ${response.status}")
-            println("[getTags] Body: ${response.bodyAsText()}")
-            if (response.status.isSuccess()) {
-                val tagsResponse: TagsResponse = response.body()
-                Result.success(tagsResponse.response)
-            } else {
-                val apiError: ApiError = response.body()
-                Result.failure(Exception(apiError.error ?: "Unbekannter Serverfehler"))
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            Result.failure(e)
-        }
+        }.map { it.response }
     }
 
+    /**
+     * Get links filtered by collection
+     */
     suspend fun getLinksByCollection(collectionId: Int): Result<FilteredLinksResponse> {
-        if (instanceUrl.isEmpty() || authToken == null) {
-            return Result.failure(Exception("User is not authenticated."))
-        }
-        return try {
+        return executeAuthenticatedRequest {
             val url = URLBuilder(instanceUrl).apply {
                 path("api", "v1", "links")
                 parameters.append("collectionId", collectionId.toString())
             }.buildString()
-            val response = client.get(url) {
-                header("Authorization", "Bearer $authToken")
+            
+            client.get(url) {
+                addAuthHeader()
                 contentType(ContentType.Application.Json)
             }
-            if (response.status.isSuccess()) {
-                Result.success(response.body())
-            } else {
-                val apiError: ApiError = response.body()
-                Result.failure(Exception(apiError.error ?: "Unknown server error"))
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            Result.failure(e)
         }
     }
 
+    /**
+     * Get links filtered by tag
+     */
     suspend fun getLinksByTag(tagId: Int): Result<FilteredLinksResponse> {
-        if (instanceUrl.isEmpty() || authToken == null) {
-            return Result.failure(Exception("User is not authenticated."))
-        }
-        return try {
+        return executeAuthenticatedRequest {
             val url = URLBuilder(instanceUrl).apply {
                 path("api", "v1", "links")
                 parameters.append("tagId", tagId.toString())
             }.buildString()
-            val response = client.get(url) {
-                header("Authorization", "Bearer $authToken")
+            
+            client.get(url) {
+                addAuthHeader()
                 contentType(ContentType.Application.Json)
             }
-            if (response.status.isSuccess()) {
-                Result.success(response.body())
-            } else {
-                val apiError: ApiError = response.body()
-                Result.failure(Exception(apiError.error ?: "Unknown server error"))
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            Result.failure(e)
         }
     }
 
+    /**
+     * Get paginated links for infinite scrolling
+     * @param cursor Optional cursor for pagination (null for first page)
+     */
     suspend fun getLinksPaged(cursor: Int? = null): Result<SearchResponse> {
-        if (instanceUrl.isEmpty() || authToken == null) {
-            return Result.failure(Exception("User is not authenticated."))
-        }
-        return try {
+        return executeAuthenticatedRequest {
             val url = URLBuilder(instanceUrl).apply {
                 path("api", "v1", "search")
                 if (cursor != null) parameters.append("cursor", cursor.toString())
             }.buildString()
-            val response = client.get(url) {
-                header("Authorization", "Bearer $authToken")
+            
+            client.get(url) {
+                addAuthHeader()
                 contentType(ContentType.Application.Json)
             }
+        }
+    }
+
+    // --- Private Helper Methods ---
+
+    /**
+     * Check if user is authenticated
+     */
+    private fun isAuthenticated(): Boolean = instanceUrl.isNotEmpty() && authToken != null
+
+    /**
+     * Add authentication header to request
+     */
+    private fun HttpRequestBuilder.addAuthHeader() {
+        header("Authorization", "Bearer $authToken")
+    }
+
+    /**
+     * Execute an authenticated API request with consistent error handling
+     */
+    private suspend inline fun <reified T> executeAuthenticatedRequest(
+        crossinline requestBuilder: suspend () -> HttpResponse
+    ): Result<T> {
+        if (!isAuthenticated()) {
+            return Result.failure(Exception("User is not authenticated."))
+        }
+
+        return try {
+            val response = requestBuilder()
+            
             if (response.status.isSuccess()) {
-                Result.success(response.body())
+                Result.success(response.body<T>())
             } else {
                 val apiError: ApiError = response.body()
                 Result.failure(Exception(apiError.error ?: "Unknown server error"))
             }
         } catch (e: Exception) {
-            e.printStackTrace()
             Result.failure(e)
         }
     }
