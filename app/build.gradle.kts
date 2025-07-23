@@ -14,8 +14,8 @@ android {
         applicationId = "com.wltr.linkycow"
         minSdk = 35
         targetSdk = 36
-        versionCode = 5
-        versionName = "5"
+        versionCode = 6
+        versionName = "1.0.0b1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
