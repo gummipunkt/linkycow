@@ -46,7 +46,7 @@ fun AppNavHost(
                     navController.navigate(Screen.Main.route) {
                         popUpTo(Screen.Login.route) { inclusive = true }
                     }
-                    loginViewModel.onNavigationDone()
+                    loginViewModel.resetUiState()
                 }
             }
         }
