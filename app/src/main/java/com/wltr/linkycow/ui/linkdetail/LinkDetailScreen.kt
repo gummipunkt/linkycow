@@ -33,6 +33,8 @@ import com.wltr.linkycow.data.remote.dto.LinkDetailData
 import com.wltr.linkycow.ui.common.ClickableUrlText
 import kotlinx.coroutines.launch
 import com.wltr.linkycow.ui.navigation.Screen
+import androidx.compose.ui.res.stringResource
+import com.wltr.linkycow.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -93,7 +95,7 @@ fun LinkDetailScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text("Link Details") },
+                title = { Text(stringResource(R.string.linkdetail_url)) },
                 navigationIcon = {
                     IconButton(onClick = { navController.navigateUp() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -233,7 +235,7 @@ fun LinkDetails(
                                 modifier = Modifier.size(16.dp)
                             )
                             Text(
-                                text = "URL",
+                                text = stringResource(R.string.linkdetail_url),
                                 style = MaterialTheme.typography.labelMedium,
                                 color = MaterialTheme.colorScheme.secondary,
                                 fontWeight = FontWeight.SemiBold
@@ -378,7 +380,7 @@ fun LinkDetails(
                             modifier = Modifier.size(20.dp)
                         )
                         Text(
-                            "Collection",
+                            stringResource(R.string.linkdetail_collection),
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.SemiBold
@@ -426,7 +428,7 @@ fun LinkDetails(
                             modifier = Modifier.size(20.dp)
                         )
                         Text(
-                            "Tags",
+                            stringResource(R.string.linkdetail_tags),
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.tertiary,
                             fontWeight = FontWeight.SemiBold
@@ -494,7 +496,7 @@ fun LinkDetails(
                         modifier = Modifier.size(20.dp)
                     )
                     Text(
-                        "Preserved Formats & Dates",
+                        stringResource(R.string.linkdetail_preserved_formats),
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.tertiary,
                         fontWeight = FontWeight.SemiBold
@@ -509,7 +511,7 @@ fun LinkDetails(
 
                 if (formats.isEmpty()) {
                     Text(
-                        "No preserved formats available",
+                        stringResource(R.string.linkdetail_no_preserved),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.7f),
                         fontStyle = FontStyle.Italic
@@ -574,14 +576,14 @@ fun LinkDetails(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text("Created:", fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.linkdetail_created), fontWeight = FontWeight.SemiBold)
                     Text(link.createdAt.replace("T", " ").take(19))
                 }
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text("Last Updated:", fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.linkdetail_last_updated), fontWeight = FontWeight.SemiBold)
                     Text(link.updatedAt.replace("T", " ").take(19))
                 }
                 link.lastPreserved?.let {
@@ -589,7 +591,7 @@ fun LinkDetails(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text("Last Preserved:", fontWeight = FontWeight.SemiBold)
+                        Text(stringResource(R.string.linkdetail_last_preserved), fontWeight = FontWeight.SemiBold)
                         Text(it.replace("T", " ").take(19))
                     }
                 }

@@ -12,7 +12,7 @@ android {
 
     defaultConfig {
         applicationId = "com.wltr.linkycow"
-        minSdk = 29
+        minSdk = 35
         targetSdk = 36
         versionCode = 4
         versionName = "0.4"

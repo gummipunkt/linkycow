@@ -13,6 +13,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
 
 @Composable
 fun LoginScreen(
@@ -32,7 +33,7 @@ fun LoginScreen(
     LaunchedEffect(key1 = uiState) {
         when (val state = uiState) {
             is LoginUiState.Success -> {
-                Toast.makeText(context, "Login successful!", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, stringResource(R.string.login_success), Toast.LENGTH_SHORT).show()
             }
             is LoginUiState.Error -> {
                 Toast.makeText(context, state.message, Toast.LENGTH_SHORT).show()
@@ -74,14 +75,14 @@ fun LoginScreen(
             ) {
                 // App Title
                 Text(
-                    text = "LinkyCow",
+                    text = stringResource(R.string.login_title),
                     style = MaterialTheme.typography.headlineMedium,
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
                 )
                 
                 Text(
-                    text = "Connect to your Linkwarden instance",
+                    text = stringResource(R.string.login_subtitle),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center
@@ -96,8 +97,8 @@ fun LoginScreen(
                         if (!url.startsWith("https://")) url = "https://" + url.removePrefix("http://")
                         instanceUrl = url
                     },
-                    label = { Text("Server-URL (https)") },
-                    placeholder = { Text("https://your-linkwarden.com") },
+                    label = { Text(stringResource(R.string.login_url_label)) },
+                    placeholder = { Text(stringResource(R.string.login_url_placeholder)) },
                     modifier = Modifier.fillMaxWidth(),
                     enabled = !isLoading,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri, imeAction = ImeAction.None),
@@ -114,8 +115,8 @@ fun LoginScreen(
                     onValueChange = { newValue ->
                         username = newValue.replace(" ", "").lowercase()
                     },
-                    label = { Text("Username") },
-                    placeholder = { Text("your-username") },
+                    label = { Text(stringResource(R.string.login_username_label)) },
+                    placeholder = { Text(stringResource(R.string.login_username_placeholder)) },
                     modifier = Modifier.fillMaxWidth(),
                     enabled = !isLoading,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.None),
@@ -130,8 +131,8 @@ fun LoginScreen(
                 OutlinedTextField(
                     value = password,
                     onValueChange = { password = it },
-                    label = { Text("Password") },
-                    placeholder = { Text("••••••••") },
+                    label = { Text(stringResource(R.string.login_password_label)) },
+                    placeholder = { Text(stringResource(R.string.login_password_placeholder)) },
                     visualTransformation = PasswordVisualTransformation(),
                     modifier = Modifier.fillMaxWidth(),
                     enabled = !isLoading,
@@ -166,7 +167,7 @@ fun LoginScreen(
                         )
                     } else {
                         Text(
-                            "Login",
+                            stringResource(R.string.login_button),
                             style = MaterialTheme.typography.labelLarge,
                             fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
                         )

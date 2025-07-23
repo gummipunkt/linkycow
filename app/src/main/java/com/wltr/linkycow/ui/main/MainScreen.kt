@@ -52,6 +52,8 @@ import com.wltr.linkycow.data.remote.dto.CollectionDto
 import com.wltr.linkycow.data.remote.dto.TagDto
 import com.wltr.linkycow.ui.common.LinkItem
 import com.wltr.linkycow.ui.navigation.Screen
+import androidx.compose.ui.res.stringResource
+import com.wltr.linkycow.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -165,7 +167,7 @@ fun MainScreen(
                         if (linksToShow.isEmpty() && !isSearching) {
                             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                                 Text(
-                                    text = if (searchQuery.isBlank()) "No links found." else "No results for '$searchQuery'"
+                                    text = if (searchQuery.isBlank()) stringResource(R.string.main_no_links) else stringResource(R.string.main_no_results, searchQuery)
                                 )
                             }
                         } else {

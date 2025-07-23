@@ -25,6 +25,8 @@ import com.wltr.linkycow.data.remote.dto.FullLinkData
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
 import com.wltr.linkycow.data.remote.ApiClient
+import androidx.compose.ui.res.stringResource
+import com.wltr.linkycow.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -105,7 +107,7 @@ fun AddLinkScreen(
             is AddLinkUiState.Success -> {
                 Toast.makeText(
                     context,
-                    if (linkId != null) "Link erfolgreich aktualisiert!" else "Link erfolgreich hinzugefügt!",
+                    if (linkId != null) stringResource(R.string.add_link_update_success) else stringResource(R.string.add_link_success),
                     Toast.LENGTH_SHORT
                 ).show()
                 onLinkAdded()
@@ -120,10 +122,10 @@ fun AddLinkScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (linkId != null) "Link bearbeiten" else "Neuen Link hinzufügen") },
+                title = { Text(if (linkId != null) stringResource(R.string.edit_link_title) else stringResource(R.string.add_link_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Zurück")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.add_link_save))
                     }
                 }
             )
@@ -141,8 +143,8 @@ fun AddLinkScreen(
                         selectedCollection?.name ?: ""
                     )
                 },
-                icon = { Icon(Icons.Filled.Save, contentDescription = if (linkId != null) "Aktualisieren" else "Speichern") },
-                text = { Text(if (linkId != null) "Aktualisieren" else "Speichern") },
+                icon = { Icon(Icons.Filled.Save, contentDescription = if (linkId != null) stringResource(R.string.add_link_update) else stringResource(R.string.add_link_save)) },
+                text = { Text(if (linkId != null) stringResource(R.string.add_link_update) else stringResource(R.string.add_link_save)) },
                 expanded = !isLoading
             )
         },
@@ -180,7 +182,7 @@ fun AddLinkScreen(
                 ) {
                     // Title
                     Text(
-                        text = "Neuen Link hinzufügen",
+                        text = if (linkId != null) stringResource(R.string.edit_link_title) else stringResource(R.string.add_link_title),
                         style = MaterialTheme.typography.headlineSmall,
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
@@ -188,8 +190,8 @@ fun AddLinkScreen(
                     OutlinedTextField(
                         value = url,
                         onValueChange = { url = it },
-                        label = { Text("URL *") },
-                        placeholder = { Text("https://example.com") },
+                        label = { Text(stringResource(R.string.add_link_url_label)) },
+                        placeholder = { Text(stringResource(R.string.add_link_url_placeholder)) },
                         modifier = Modifier.fillMaxWidth(),
                         enabled = !isLoading,
                         colors = OutlinedTextFieldDefaults.colors(
@@ -202,8 +204,8 @@ fun AddLinkScreen(
                     OutlinedTextField(
                         value = name,
                         onValueChange = { name = it },
-                        label = { Text("Name") },
-                        placeholder = { Text("Titel des Links") },
+                        label = { Text(stringResource(R.string.add_link_name_label)) },
+                        placeholder = { Text(stringResource(R.string.add_link_name_placeholder)) },
                         modifier = Modifier.fillMaxWidth(),
                         enabled = !isLoading,
                         colors = OutlinedTextFieldDefaults.colors(
@@ -216,8 +218,8 @@ fun AddLinkScreen(
                     OutlinedTextField(
                         value = description,
                         onValueChange = { description = it },
-                        label = { Text("Beschreibung") },
-                        placeholder = { Text("Notizen ...") },
+                        label = { Text(stringResource(R.string.add_link_description_label)) },
+                        placeholder = { Text(stringResource(R.string.add_link_description_placeholder)) },
                         modifier = Modifier.fillMaxWidth(),
                         enabled = !isLoading,
                         minLines = 3,

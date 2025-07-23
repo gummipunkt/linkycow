@@ -10,10 +10,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.wltr.linkycow.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -45,14 +47,14 @@ fun AboutScreen(
         ) {
             // App Name and Version
             Text(
-                text = "LinkyCow",
+                text = stringResource(R.string.about_title),
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center
             )
             
             Text(
-                text = "Version 0.2",
+                text = stringResource(R.string.about_version, "0.2"),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
@@ -170,12 +172,12 @@ fun AboutScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
-                        text = "Description",
+                        text = stringResource(R.string.about_description_title),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold
                     )
                     Text(
-                        text = "LinkyCow is an Android app for managing bookmarks with Linkwarden. With this app, you can easily search, add, and organize your saved links.",
+                        text = stringResource(R.string.about_description),
                         style = MaterialTheme.typography.bodyMedium,
                         textAlign = TextAlign.Justify
                     )

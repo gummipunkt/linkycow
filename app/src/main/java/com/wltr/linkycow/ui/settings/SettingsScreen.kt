@@ -18,6 +18,8 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import androidx.compose.ui.res.stringResource
+import com.wltr.linkycow.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -47,8 +49,8 @@ fun SettingsScreen(
     if (showLogoutDialog) {
         AlertDialog(
             onDismissRequest = { showLogoutDialog = false },
-            title = { Text("Logout") },
-            text = { Text("Are you sure you want to logout?") },
+            title = { Text(stringResource(R.string.settings_logout)) },
+            text = { Text(stringResource(R.string.settings_logout_confirm)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -56,12 +58,12 @@ fun SettingsScreen(
                         onLogoutClick()
                     }
                 ) {
-                    Text("Logout")
+                    Text(stringResource(R.string.settings_logout_confirm_button))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showLogoutDialog = false }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.settings_logout_cancel))
                 }
             }
         )
@@ -70,10 +72,10 @@ fun SettingsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Settings") },
+                title = { Text(stringResource(R.string.settings_title)) },
                 navigationIcon = {
                     IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
                     }
                 }
             )
@@ -89,7 +91,7 @@ fun SettingsScreen(
         ) {
             // Account Section
             Text(
-                text = "Account",
+                text = stringResource(R.string.settings_account),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.padding(vertical = 8.dp)
@@ -98,8 +100,8 @@ fun SettingsScreen(
             Card {
                 Column {
                     ListItem(
-                        headlineContent = { Text("Change URL and Credentials") },
-                        supportingContent = { Text("Edit server URL, username and password") },
+                        headlineContent = { Text(stringResource(R.string.settings_change_credentials)) },
+                        supportingContent = { Text(stringResource(R.string.settings_change_credentials_desc)) },
                         leadingContent = {
                             Icon(Icons.Default.Edit, contentDescription = null)
                         },
@@ -109,8 +111,8 @@ fun SettingsScreen(
                     )
                     HorizontalDivider()
                     ListItem(
-                        headlineContent = { Text("Logout") },
-                        supportingContent = { Text("Sign out of this account") },
+                        headlineContent = { Text(stringResource(R.string.settings_logout)) },
+                        supportingContent = { Text(stringResource(R.string.settings_logout_desc)) },
                         leadingContent = {
                             Icon(
                                 Icons.AutoMirrored.Filled.ExitToApp, 

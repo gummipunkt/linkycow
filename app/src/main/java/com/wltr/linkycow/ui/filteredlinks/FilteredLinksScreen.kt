@@ -12,11 +12,13 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.wltr.linkycow.ui.common.LinkItem
 import com.wltr.linkycow.ui.navigation.Screen
+import com.wltr.linkycow.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,10 +38,10 @@ fun FilteredLinksScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(text = filterName ?: "Links") },
+                title = { Text(text = filterName ?: stringResource(R.string.filteredlinks_title)) },
                 navigationIcon = {
                     IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
                     }
                 }
             )
@@ -56,7 +58,7 @@ fun FilteredLinksScreen(
                 is FilteredLinksUiState.Error -> Text(state.message)
                 is FilteredLinksUiState.Success -> {
                     if (state.links.isEmpty()) {
-                        Text("No links found for this filter.")
+                        Text(stringResource(R.string.filteredlinks_no_links))
                     } else {
                         LazyColumn(
                             modifier = Modifier.fillMaxSize(),
