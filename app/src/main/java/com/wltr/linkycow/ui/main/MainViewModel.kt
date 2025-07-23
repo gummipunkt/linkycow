@@ -11,6 +11,7 @@ import com.wltr.linkycow.data.remote.ApiClient
 import com.wltr.linkycow.data.remote.dto.CollectionDto
 import com.wltr.linkycow.data.remote.dto.Link
 import com.wltr.linkycow.data.remote.dto.TagDto
+import com.wltr.linkycow.data.remote.dto.SearchResponse
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -47,6 +48,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _isSearching = MutableStateFlow(false)
     val isSearching: StateFlow<Boolean> = _isSearching.asStateFlow()
+
+    private val _pagedLinks = MutableStateFlow<List<Link>>(emptyList())
+    val pagedLinks: StateFlow<List<Link>> = _pagedLinks.asStateFlow()
+    private var nextCursor: Int? = null
+    private var isLoadingMore = false
+    private var pagingInitialized = false
 
     var selectedCollectionId by mutableStateOf<Int?>(null)
         private set
@@ -127,6 +134,56 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             } finally {
                 _isRefreshing.value = false
             }
+        }
+    }
+
+    fun loadInitialLinks() {
+        if (pagingInitialized) return
+        pagingInitialized = true
+        viewModelScope.launch {
+            _uiState.value = DashboardUiState.Loading
+            val token = sessionRepository.authTokenFlow.first()
+            val url = sessionRepository.instanceUrlFlow.first()
+            ApiClient.setAuth(url, token)
+            val collectionsResult = ApiClient.getCollections()
+            val tagsResult = ApiClient.getTags()
+            val result = ApiClient.getLinksPaged()
+            if (result.isSuccess && collectionsResult.isSuccess && tagsResult.isSuccess) {
+                val response = result.getOrThrow().data
+                _pagedLinks.value = response.links
+                nextCursor = response.nextCursor
+                _uiState.value = DashboardUiState.Success(
+                    links = response.links,
+                    collections = collectionsResult.getOrThrow(),
+                    tags = tagsResult.getOrThrow()
+                )
+            } else {
+                val error = result.exceptionOrNull()?.message
+                    ?: collectionsResult.exceptionOrNull()?.message
+                    ?: tagsResult.exceptionOrNull()?.message
+                    ?: "An unknown error occurred"
+                _uiState.value = DashboardUiState.Error(error)
+            }
+        }
+    }
+
+    fun loadMoreLinks() {
+        if (isLoadingMore || nextCursor == null) return
+        isLoadingMore = true
+        viewModelScope.launch {
+            val result = ApiClient.getLinksPaged(nextCursor)
+            result.onSuccess {
+                val response = it.data
+                val current = _pagedLinks.value
+                _pagedLinks.value = current + response.links
+                nextCursor = response.nextCursor
+                // Update UI-State, damit die neuen Links angezeigt werden
+                val currentState = _uiState.value
+                if (currentState is DashboardUiState.Success) {
+                    _uiState.value = currentState.copy(links = _pagedLinks.value)
+                }
+            }
+            isLoadingMore = false
         }
     }
 

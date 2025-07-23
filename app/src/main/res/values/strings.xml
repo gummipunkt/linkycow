@@ -23,7 +23,7 @@
     <string name="add_link_success">Link added successfully!</string>
     <string name="add_link_update_success">Link updated successfully!</string>
     <string name="main_no_links">No links found.</string>
-    <string name="main_no_results">No results for '%1$s'</string>
+    <string name="main_no_results">No results for \"%1$s\"</string>
     <string name="settings_title">Settings</string>
     <string name="settings_account">Account</string>
     <string name="settings_change_credentials">Change URL and Credentials</string>

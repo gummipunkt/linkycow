@@ -420,4 +420,29 @@ object ApiClient {
             Result.failure(e)
         }
     }
+
+    suspend fun getLinksPaged(cursor: Int? = null): Result<SearchResponse> {
+        if (instanceUrl.isEmpty() || authToken == null) {
+            return Result.failure(Exception("User is not authenticated."))
+        }
+        return try {
+            val url = URLBuilder(instanceUrl).apply {
+                path("api", "v1", "search")
+                if (cursor != null) parameters.append("cursor", cursor.toString())
+            }.buildString()
+            val response = client.get(url) {
+                header("Authorization", "Bearer $authToken")
+                contentType(ContentType.Application.Json)
+            }
+            if (response.status.isSuccess()) {
+                Result.success(response.body())
+            } else {
+                val apiError: ApiError = response.body()
+                Result.failure(Exception(apiError.error ?: "Unknown server error"))
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Result.failure(e)
+        }
+    }
 } 

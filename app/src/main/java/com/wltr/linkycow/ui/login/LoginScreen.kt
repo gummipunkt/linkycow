@@ -14,6 +14,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
+import com.wltr.linkycow.R
 
 @Composable
 fun LoginScreen(
@@ -29,11 +30,14 @@ fun LoginScreen(
 
     val isLoading = uiState is LoginUiState.Loading
 
+    // Get strings outside of LaunchedEffect
+    val loginSuccessMessage = stringResource(R.string.login_success)
+
     // Show messages based on the state
     LaunchedEffect(key1 = uiState) {
         when (val state = uiState) {
             is LoginUiState.Success -> {
-                Toast.makeText(context, stringResource(R.string.login_success), Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, loginSuccessMessage, Toast.LENGTH_SHORT).show()
             }
             is LoginUiState.Error -> {
                 Toast.makeText(context, state.message, Toast.LENGTH_SHORT).show()
@@ -94,7 +98,6 @@ fun LoginScreen(
                     value = instanceUrl,
                     onValueChange = { newValue ->
                         var url = newValue.replace(" ", "").lowercase()
-                        if (!url.startsWith("https://")) url = "https://" + url.removePrefix("http://")
                         instanceUrl = url
                     },
                     label = { Text(stringResource(R.string.login_url_label)) },

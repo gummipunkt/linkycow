@@ -102,12 +102,15 @@ fun AddLinkScreen(
     }
 
     // Show messages and navigate back on success
+    // Get the strings outside of LaunchedEffect
+    val successMessage = if (linkId != null) stringResource(R.string.add_link_update_success) else stringResource(R.string.add_link_success)
+    
     LaunchedEffect(key1 = uiState) {
         when (val state = uiState) {
             is AddLinkUiState.Success -> {
                 Toast.makeText(
                     context,
-                    if (linkId != null) stringResource(R.string.add_link_update_success) else stringResource(R.string.add_link_success),
+                    successMessage,
                     Toast.LENGTH_SHORT
                 ).show()
                 onLinkAdded()

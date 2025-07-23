@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
@@ -54,6 +55,8 @@ import com.wltr.linkycow.ui.common.LinkItem
 import com.wltr.linkycow.ui.navigation.Screen
 import androidx.compose.ui.res.stringResource
 import com.wltr.linkycow.R
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -95,6 +98,24 @@ fun MainScreen(
     LaunchedEffect(isRefreshing) {
         if (!isRefreshing) {
             pullToRefreshState.endRefresh()
+        }
+    }
+
+    val pagedLinks by viewModel.pagedLinks.collectAsState()
+    val coroutineScope = rememberCoroutineScope()
+    val listState = remember { LazyListState() }
+
+    // Initiales Paging laden
+    LaunchedEffect(Unit) {
+        viewModel.loadInitialLinks()
+    }
+
+    // Infinite Scrolling: Wenn das letzte Element sichtbar wird, lade mehr
+    LaunchedEffect(pagedLinks, listState.firstVisibleItemIndex, listState.layoutInfo.totalItemsCount) {
+        val lastVisible = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index
+        val total = listState.layoutInfo.totalItemsCount
+        if (lastVisible != null && total > 0 && lastVisible >= total - 3) {
+            viewModel.loadMoreLinks()
         }
     }
 
@@ -163,7 +184,7 @@ fun MainScreen(
                             isEnabled = !isRefreshing
                         )
 
-                        val linksToShow = if (searchQuery.isBlank()) currentState.links else searchResults
+                        val linksToShow = if (searchQuery.isBlank()) pagedLinks else searchResults
                         if (linksToShow.isEmpty() && !isSearching) {
                             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                                 Text(
@@ -172,6 +193,7 @@ fun MainScreen(
                             }
                         } else {
                             LazyColumn(
+                                state = listState,
                                 modifier = Modifier.fillMaxSize(),
                                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                                 verticalArrangement = Arrangement.spacedBy(12.dp)
