@@ -33,6 +33,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
@@ -133,6 +134,11 @@ fun MainScreen(
             } else {
                 TopAppBar(
                     title = { Text("Dashboard") },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        titleContentColor = MaterialTheme.colorScheme.onSurface,
+                        actionIconContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                    ),
                     actions = {
                         IconButton(onClick = { isSearchExpanded = true }) {
                             Icon(Icons.Default.Search, contentDescription = "Search")
@@ -145,7 +151,11 @@ fun MainScreen(
             }
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = { navController.navigate(Screen.AddLink.createRoute(null)) }) {
+            FloatingActionButton(
+                onClick = { navController.navigate(Screen.AddLink.createRoute(null)) },
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+            ) {
                 Icon(Icons.Filled.Add, contentDescription = "Add Link")
             }
         }
@@ -287,6 +297,11 @@ fun SearchTopAppBar(
                 )
             )
         },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = MaterialTheme.colorScheme.surface,
+            titleContentColor = MaterialTheme.colorScheme.onSurface,
+            navigationIconContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+        ),
         navigationIcon = {
             IconButton(onClick = onCloseSearch) {
                 Icon(Icons.Default.Close, contentDescription = "Close search")

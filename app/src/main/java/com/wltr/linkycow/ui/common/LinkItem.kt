@@ -28,10 +28,9 @@ fun LinkItem(
             .fillMaxWidth()
             .padding(vertical = 8.dp),
         onClick = { onLinkClick(link.id) },
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant,
-            contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+            containerColor = MaterialTheme.colorScheme.surfaceContainer,
+            contentColor = MaterialTheme.colorScheme.onSurface
         )
     ) {
         Row(

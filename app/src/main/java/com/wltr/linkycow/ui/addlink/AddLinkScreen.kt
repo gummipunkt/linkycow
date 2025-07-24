@@ -126,6 +126,11 @@ fun AddLinkScreen(
         topBar = {
             TopAppBar(
                 title = { Text(if (linkId != null) stringResource(R.string.edit_link_title) else stringResource(R.string.add_link_title)) },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                ),
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.add_link_save))
@@ -146,6 +151,8 @@ fun AddLinkScreen(
                         selectedCollection?.name ?: ""
                     )
                 },
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                 icon = { Icon(Icons.Filled.Save, contentDescription = if (linkId != null) stringResource(R.string.add_link_update) else stringResource(R.string.add_link_save)) },
                 text = { Text(if (linkId != null) stringResource(R.string.add_link_update) else stringResource(R.string.add_link_save)) },
                 expanded = !isLoading
@@ -171,10 +178,9 @@ fun AddLinkScreen(
                     .padding(paddingValues)
                     .padding(16.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                     contentColor = MaterialTheme.colorScheme.onSurface
                 ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
                 shape = MaterialTheme.shapes.large
             ) {
                 Column(

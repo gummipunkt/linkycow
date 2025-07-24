@@ -1,6 +1,7 @@
 package com.wltr.linkycow.ui.login
 
 import android.widget.Toast
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
@@ -15,6 +16,9 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
 import com.wltr.linkycow.R
+import com.wltr.linkycow.ui.login.LoginUiState
+import com.wltr.linkycow.ui.login.LoginViewModel
+import androidx.compose.ui.res.painterResource
 
 @Composable
 fun LoginScreen(
@@ -66,10 +70,9 @@ fun LoginScreen(
                 .padding(24.dp)
                 .align(Alignment.Center),
             colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface,
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                 contentColor = MaterialTheme.colorScheme.onSurface
             ),
-            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
             shape = MaterialTheme.shapes.extraLarge
         ) {
             Column(
@@ -83,6 +86,13 @@ fun LoginScreen(
                     style = MaterialTheme.typography.headlineMedium,
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                )
+                
+                // App Logo
+                Image(
+                    painter = painterResource(id = R.drawable.ic_launcher_foreground),
+                    contentDescription = "LinkyCow Logo",
+                    modifier = Modifier.size(120.dp)
                 )
                 
                 Text(
@@ -156,10 +166,6 @@ fun LoginScreen(
                         .fillMaxWidth()
                         .height(56.dp),
                     enabled = !isLoading,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary
-                    ),
                     shape = MaterialTheme.shapes.medium
                 ) {
                     if (isLoading) {

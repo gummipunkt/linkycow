@@ -14,8 +14,8 @@ android {
         applicationId = "com.wltr.linkycow"
         minSdk = 35
         targetSdk = 36
-        versionCode = 6
-        versionName = "1.0.0b1"
+        versionCode = 7
+        versionName = "1.0.0-b2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -101,4 +101,7 @@ dependencies {
 
     // Coil for image loading
     implementation("io.coil-kt:coil-compose:2.5.0")
+    
+    // Google Fonts for Material Theme
+    implementation("androidx.compose.ui:ui-text-google-fonts:1.6.7")
 }
