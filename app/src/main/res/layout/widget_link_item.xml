@@ -1,32 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/link_item_root"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:background="@drawable/widget_link_item_background"
-    android:padding="12dp"
-    android:layout_marginBottom="8dp"
-    android:clickable="true"
-    android:focusable="true">
+    android:paddingVertical="8dp"
+    android:background="?android:attr/selectableItemBackground">
 
     <TextView
-        android:id="@+id/link_title"
+        android:id="@+id/link_item_title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:textColor="?android:attr/textColorPrimary"
         android:textSize="14sp"
         android:textStyle="bold"
-        android:textColor="@color/widget_text_primary_light"
-        android:maxLines="2"
+        android:maxLines="1"
         android:ellipsize="end"
-        android:layout_marginBottom="4dp" />
+        tools:text="This is a very long link title that will be truncated" />
 
     <TextView
-        android:id="@+id/link_url"
+        android:id="@+id/link_item_url"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:textColor="?android:attr/textColorSecondary"
         android:textSize="12sp"
-        android:textColor="@color/widget_text_secondary_light"
         android:maxLines="1"
-        android:ellipsize="end" />
+        android:ellipsize="end"
+        tools:text="https://this.is.a.very.long.url.that.will.also.be.truncated.com/some/path" />
 
-</LinearLayout> 
+</LinearLayout>

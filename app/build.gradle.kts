@@ -14,8 +14,8 @@ android {
         applicationId = "com.wltr.linkycow"
         minSdk = 35
         targetSdk = 36
-        versionCode = 7
-        versionName = "1.0.0-b2"
+        versionCode = 8
+        versionName = "1.0.0-b3"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -107,8 +107,4 @@ dependencies {
     
     // WorkManager for background tasks
     implementation("androidx.work:work-runtime-ktx:2.9.0")
-
-    // Jetpack Glance for modern App Widgets
-    implementation("androidx.glance:glance-appwidget:1.1.0")
-    implementation("androidx.glance:glance-material3:1.1.0")
 }

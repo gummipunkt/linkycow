@@ -40,8 +40,8 @@
             </intent-filter>
         </activity>
 
-        <!-- Glance Widget Provider -->
-        <receiver android:name=".widget.LinkyCowGlanceWidgetReceiver"
+        <!-- RemoteViews Widget Provider -->
+        <receiver android:name=".widget.LinkyCowWidgetProvider"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
