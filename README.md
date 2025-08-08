@@ -46,8 +46,7 @@ LinkyCow is a modern Android application that provides a beautiful and intuitive
 
 ### From Releases
 1. Download the latest APK from the [Releases](https://github.com/gummipunkt/linkycow/releases) page
-2. Install the APK on your device
-3. Grant necessary permissions when prompted
+2. Install the APK 
 
 ### From Source
 1. Clone this repository:
@@ -69,7 +68,7 @@ LinkyCow is a modern Android application that provides a beautiful and intuitive
 2. **Dashboard**: Browse your links, search, and pull to refresh
 3. **Add Links**: Use the floating action button or share from other apps
 4. **Edit Links**: Tap on any link to view details and edit
-5. **Collections & Tags**: Organize your links using the dropdown and autocomplete fields
+
 
 ## Development
 
@@ -92,63 +91,9 @@ LinkyCow is a modern Android application that provides a beautiful and intuitive
    ./gradlew assembleDebug
    ```
 
-### Project Structure
-```
-app/
-├── src/main/java/com/wltr/linkycow/
-│   ├── data/
-│   │   ├── local/          # Local data storage (sessions)
-│   │   └── remote/         # API clients and DTOs
-│   ├── ui/
-│   │   ├── login/          # Authentication screens
-│   │   ├── main/           # Dashboard with infinite scrolling
-│   │   ├── linkdetail/     # Link detail view and editing
-│   │   ├── addlink/        # Add/edit link with collections & tags
-│   │   ├── settings/       # App settings and logout
-│   │   ├── about/          # About screen
-│   │   ├── share/          # Share functionality from other apps
-│   │   ├── navigation/     # Navigation with Safe Args
-│   │   ├── theme/          # Material 3 theming
-│   │   └── common/         # Shared UI components
-│   └── MainActivity.kt
-└── src/main/res/
-    ├── values/             # English strings and themes
-    ├── values-de/          # German translations
-    ├── mipmap-*/           # Adaptive app icons
-    └── drawable/           # Vector drawables and icons
-```
-
-### Technical Stack
-- **Architecture**: MVVM with Jetpack Compose
-- **Networking**: Ktor client with kotlinx.serialization
-- **State Management**: StateFlow and Compose State
-- **Navigation**: Jetpack Navigation with Safe Args
-- **UI**: Material Design 3 (Material You)
-- **Language**: Kotlin with Coroutines
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
-
-### Guidelines
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-### Development Notes
-- Follow Material Design 3 guidelines for UI changes
-- Add string resources for both English and German
-- Test on different screen sizes and orientations
-- Ensure proper error handling and loading states
-
 ## Roadmap
 
 - [ ] Dark mode support (automatic with Material You)
-- [ ] Bulk operations (select multiple links)
-- [ ] Offline support with local caching
-- [ ] Widget support for quick link access
 - [ ] Custom themes beyond Material You
 
 ## License

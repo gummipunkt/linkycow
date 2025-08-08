@@ -40,16 +40,13 @@
             </intent-filter>
         </activity>
 
-        <!-- Widget Provider -->
-        <receiver 
-            android:name=".widget.RecentLinksWidgetProvider"
+        <!-- Glance Widget Provider -->
+        <receiver android:name=".widget.LinkyCowGlanceWidgetReceiver"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-                <action android:name="com.wltr.linkycow.REFRESH_WIDGET" />
-                <action android:name="com.wltr.linkycow.OPEN_LINK" />
             </intent-filter>
-            <meta-data 
+            <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/recent_links_widget_info" />
         </receiver>
