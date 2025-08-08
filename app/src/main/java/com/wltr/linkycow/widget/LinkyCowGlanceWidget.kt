@@ -109,9 +109,23 @@ class LinkyCowGlanceWidget : GlanceAppWidget() {
         }
     }
 
+import androidx.glance.action.actionStartActivity
+import android.content.Intent
+import android.net.Uri
+
+// ...
+
     @Composable
     private fun LinkItem(link: Link) {
-        Column(modifier = GlanceModifier.padding(vertical = 8.dp)) {
+        Column(
+            modifier = GlanceModifier
+                .padding(vertical = 8.dp)
+                .clickable(
+                    onClick = actionStartActivity(
+                        Intent(Intent.ACTION_VIEW, Uri.parse(link.url))
+                    )
+                )
+        ) {
             Text(
                 text = link.name.ifEmpty { "Kein Titel" },
                 style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 14.sp, color = GlanceTheme.colors.onSurface)
