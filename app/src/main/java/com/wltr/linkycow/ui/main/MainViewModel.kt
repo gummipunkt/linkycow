@@ -70,6 +70,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         private set
     var selectedTagId by mutableStateOf<Int?>(null)
         private set
+    
+    // Multi-select state
+    private val _isSelectionMode = MutableStateFlow(false)
+    val isSelectionMode: StateFlow<Boolean> = _isSelectionMode.asStateFlow()
+    
+    private val _selectedLinkIds = MutableStateFlow<Set<Int>>(emptySet())
+    val selectedLinkIds: StateFlow<Set<Int>> = _selectedLinkIds.asStateFlow()
 
     init {
         loadDashboardData(isRefresh = false)
@@ -331,11 +338,95 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                             links = currentState.links.filter { it.id != linkId }
                         )
                     }
+                    
+                    // Remove from selection if it was selected
+                    _selectedLinkIds.value = _selectedLinkIds.value - linkId
                 }
             } catch (e: Exception) {
                 // Error handling - could show a snackbar or toast
                 e.printStackTrace()
             }
+        }
+    }
+    
+    /**
+     * Toggle selection mode on/off
+     */
+    fun toggleSelectionMode() {
+        _isSelectionMode.value = !_isSelectionMode.value
+        if (!_isSelectionMode.value) {
+            // Clear selections when exiting selection mode
+            _selectedLinkIds.value = emptySet()
+        }
+    }
+    
+    /**
+     * Toggle selection of a specific link
+     */
+    fun toggleLinkSelection(linkId: Int) {
+        val currentSelection = _selectedLinkIds.value
+        _selectedLinkIds.value = if (linkId in currentSelection) {
+            currentSelection - linkId
+        } else {
+            currentSelection + linkId
+        }
+    }
+    
+    /**
+     * Select all visible links
+     */
+    fun selectAllLinks() {
+        val allLinkIds = when {
+            searchQuery.value.isNotBlank() -> _searchResults.value.map { it.id }.toSet()
+            else -> {
+                val currentState = _uiState.value
+                if (currentState is DashboardUiState.Success) {
+                    currentState.links.map { it.id }.toSet()
+                } else {
+                    emptySet()
+                }
+            }
+        }
+        _selectedLinkIds.value = allLinkIds
+    }
+    
+    /**
+     * Clear all selections
+     */
+    fun clearSelection() {
+        _selectedLinkIds.value = emptySet()
+    }
+    
+    /**
+     * Delete all selected links
+     */
+    fun deleteSelectedLinks() {
+        viewModelScope.launch {
+            val selectedIds = _selectedLinkIds.value.toList()
+            selectedIds.forEach { linkId ->
+                try {
+                    val result = ApiClient.deleteLink(linkId)
+                    result.onSuccess {
+                        // Remove from all relevant lists
+                        _pagedLinks.value = _pagedLinks.value.filter { it.id != linkId }
+                        _searchResults.value = _searchResults.value.filter { it.id != linkId }
+                        
+                        // Update main UI state
+                        val currentState = _uiState.value
+                        if (currentState is DashboardUiState.Success) {
+                            _uiState.value = currentState.copy(
+                                links = currentState.links.filter { it.id != linkId }
+                            )
+                        }
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+            
+            // Clear selection and exit selection mode
+            _selectedLinkIds.value = emptySet()
+            _isSelectionMode.value = false
         }
     }
 

@@ -17,8 +17,10 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.SelectAll
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Tag
 import androidx.compose.material3.CircularProgressIndicator
@@ -71,6 +73,8 @@ fun MainScreen(
     val searchQuery by viewModel.searchQuery.collectAsState()
     val searchResults by viewModel.searchResults.collectAsState()
     val isSearching by viewModel.isSearching.collectAsState()
+    val isSelectionMode by viewModel.isSelectionMode.collectAsState()
+    val selectedLinkIds by viewModel.selectedLinkIds.collectAsState()
     var isSearchExpanded by remember { mutableStateOf(false) }
 
     val pullToRefreshState = rememberPullToRefreshState()
@@ -122,32 +126,43 @@ fun MainScreen(
 
     Scaffold(
         topBar = {
-            if (isSearchExpanded) {
-                SearchTopAppBar(
-                    query = searchQuery,
-                    onQueryChange = viewModel::onSearchQueryChanged,
-                    onCloseSearch = {
-                        isSearchExpanded = false
-                        viewModel.onSearchQueryChanged("")
-                    }
-                )
-            } else {
-                TopAppBar(
-                    title = { Text("Dashboard") },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.surface,
-                        titleContentColor = MaterialTheme.colorScheme.onSurface,
-                        actionIconContentColor = MaterialTheme.colorScheme.onSurfaceVariant
-                    ),
-                    actions = {
-                        IconButton(onClick = { isSearchExpanded = true }) {
-                            Icon(Icons.Default.Search, contentDescription = "Search")
+            when {
+                isSelectionMode -> {
+                    SelectionTopAppBar(
+                        selectedCount = selectedLinkIds.size,
+                        onClearSelection = { viewModel.toggleSelectionMode() },
+                        onSelectAll = { viewModel.selectAllLinks() },
+                        onDeleteSelected = { viewModel.deleteSelectedLinks() }
+                    )
+                }
+                isSearchExpanded -> {
+                    SearchTopAppBar(
+                        query = searchQuery,
+                        onQueryChange = viewModel::onSearchQueryChanged,
+                        onCloseSearch = {
+                            isSearchExpanded = false
+                            viewModel.onSearchQueryChanged("")
                         }
-                        IconButton(onClick = { navController.navigate(Screen.Settings.route) }) {
-                            Icon(Icons.Default.Settings, contentDescription = "Settings")
+                    )
+                }
+                else -> {
+                    TopAppBar(
+                        title = { Text("Dashboard") },
+                        colors = TopAppBarDefaults.topAppBarColors(
+                            containerColor = MaterialTheme.colorScheme.surface,
+                            titleContentColor = MaterialTheme.colorScheme.onSurface,
+                            actionIconContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        ),
+                        actions = {
+                            IconButton(onClick = { isSearchExpanded = true }) {
+                                Icon(Icons.Default.Search, contentDescription = "Search")
+                            }
+                            IconButton(onClick = { navController.navigate(Screen.Settings.route) }) {
+                                Icon(Icons.Default.Settings, contentDescription = "Settings")
+                            }
                         }
-                    }
-                )
+                    )
+                }
             }
         },
         floatingActionButton = {
@@ -216,6 +231,15 @@ fun MainScreen(
                                         },
                                         onDelete = { linkId ->
                                             viewModel.deleteLink(linkId)
+                                        },
+                                        isSelectionMode = isSelectionMode,
+                                        isSelected = link.id in selectedLinkIds,
+                                        onToggleSelection = { linkId ->
+                                            viewModel.toggleLinkSelection(linkId)
+                                        },
+                                        onLongClick = {
+                                            viewModel.toggleSelectionMode()
+                                            viewModel.toggleLinkSelection(link.id)
                                         }
                                     )
                                 }
@@ -308,6 +332,43 @@ fun SearchTopAppBar(
         navigationIcon = {
             IconButton(onClick = onCloseSearch) {
                 Icon(Icons.Default.Close, contentDescription = "Close search")
+            }
+        }
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SelectionTopAppBar(
+    selectedCount: Int,
+    onClearSelection: () -> Unit,
+    onSelectAll: () -> Unit,
+    onDeleteSelected: () -> Unit
+) {
+    TopAppBar(
+        title = { 
+            Text("$selectedCount ausgewählt")
+        },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer,
+            titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+            navigationIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+            actionIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+        ),
+        navigationIcon = {
+            IconButton(onClick = onClearSelection) {
+                Icon(Icons.Default.Close, contentDescription = "Auswahl beenden")
+            }
+        },
+        actions = {
+            IconButton(onClick = onSelectAll) {
+                Icon(Icons.Default.SelectAll, contentDescription = "Alle auswählen")
+            }
+            IconButton(
+                onClick = onDeleteSelected,
+                enabled = selectedCount > 0
+            ) {
+                Icon(Icons.Default.Delete, contentDescription = "Ausgewählte löschen")
             }
         }
     )

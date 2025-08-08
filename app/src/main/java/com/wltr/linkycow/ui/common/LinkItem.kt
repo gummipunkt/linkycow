@@ -1,6 +1,8 @@
 package com.wltr.linkycow.ui.common
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -35,12 +37,16 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.ui.graphics.graphicsLayer
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun LinkItem(
     link: Link,
     onLinkClick: (Int) -> Unit,
-    onDelete: ((Int) -> Unit)? = null
+    onDelete: ((Int) -> Unit)? = null,
+    isSelectionMode: Boolean = false,
+    isSelected: Boolean = false,
+    onToggleSelection: ((Int) -> Unit)? = null,
+    onLongClick: (() -> Unit)? = null
 ) {
     val density = LocalDensity.current
     val coroutineScope = rememberCoroutineScope()
@@ -107,49 +113,65 @@ fun LinkItem(
             modifier = Modifier
                 .fillMaxWidth()
                 .graphicsLayer {
-                    translationX = offsetX
+                    translationX = if (isSelectionMode) 0f else offsetX
                     scaleX = cardScale
                     scaleY = cardScale
                 }
-                .pointerInput(Unit) {
-                    detectHorizontalDragGestures(
-                        onDragStart = { isDragging = true },
-                        onDragEnd = {
-                            isDragging = false
-                            // Überprüfung, ob Schwellenwert erreicht wurde
-                            when {
-                                offsetX < -swipeThreshold && onDelete != null -> {
-                                    // Direkt die Aktion ausführen, wie in LinkDetailScreen
-                                    onDelete(link.id)
+                .pointerInput(isSelectionMode) {
+                    if (!isSelectionMode) {
+                        detectHorizontalDragGestures(
+                            onDragStart = { isDragging = true },
+                            onDragEnd = {
+                                isDragging = false
+                                // Überprüfung, ob Schwellenwert erreicht wurde
+                                when {
+                                    offsetX < -swipeThreshold && onDelete != null -> {
+                                        // Direkt die Aktion ausführen, wie in LinkDetailScreen
+                                        onDelete(link.id)
+                                    }
+                                }
+                                // Zurück zur ursprünglichen Position
+                                coroutineScope.launch {
+                                    animate(
+                                        initialValue = offsetX,
+                                        targetValue = 0f,
+                                        animationSpec = tween(durationMillis = 300)
+                                    ) { value, _ ->
+                                        offsetX = value
+                                    }
                                 }
                             }
-                            // Zurück zur ursprünglichen Position
-                            coroutineScope.launch {
-                                animate(
-                                    initialValue = offsetX,
-                                    targetValue = 0f,
-                                    animationSpec = tween(durationMillis = 300)
-                                ) { value, _ ->
-                                    offsetX = value
-                                }
+                        ) { _, dragAmount ->
+                            // Begrenze den Swipe basierend auf verfügbaren Aktionen
+                            val newOffset = offsetX + dragAmount
+                            offsetX = when {
+                                newOffset < 0 && onDelete != null -> newOffset.coerceAtLeast(-swipeThreshold * 1.5f)
+                                else -> 0f
                             }
-                        }
-                    ) { _, dragAmount ->
-                        // Begrenze den Swipe basierend auf verfügbaren Aktionen
-                        val newOffset = offsetX + dragAmount
-                        offsetX = when {
-                            newOffset < 0 && onDelete != null -> newOffset.coerceAtLeast(-swipeThreshold * 1.5f)
-                            else -> 0f
                         }
                     }
-                },
-            onClick = { 
-                if (!isDragging) {
-                    onLinkClick(link.id) 
                 }
-            },
+                .combinedClickable(
+                    onClick = { 
+                        if (!isDragging) {
+                            if (isSelectionMode) {
+                                onToggleSelection?.invoke(link.id)
+                            } else {
+                                onLinkClick(link.id)
+                            }
+                        }
+                    },
+                    onLongClick = {
+                        if (!isSelectionMode && onLongClick != null) {
+                            onLongClick()
+                        }
+                    }
+                ),
             colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                containerColor = if (isSelected) 
+                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                else 
+                    MaterialTheme.colorScheme.surfaceContainer,
                 contentColor = MaterialTheme.colorScheme.onSurface
             )
         ) {
@@ -160,6 +182,14 @@ fun LinkItem(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
+                // Checkbox für Selection Mode
+                if (isSelectionMode) {
+                    Checkbox(
+                        checked = isSelected,
+                        onCheckedChange = { onToggleSelection?.invoke(link.id) }
+                    )
+                }
+                
                 Column(
                     modifier = Modifier.weight(1f)
                 ) {
