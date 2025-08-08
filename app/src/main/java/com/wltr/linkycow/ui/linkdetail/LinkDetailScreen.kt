@@ -72,12 +72,11 @@ fun LinkDetailScreen(
         )
     }
 
-    LaunchedEffect(Unit) {
+            LaunchedEffect(Unit) {
         viewModel.eventFlow.collect { event ->
             when (event) {
-                is LinkDetailEvent.ArchiveError -> scope.launch { snackbarHostState.showSnackbar(event.message) }
                 is LinkDetailEvent.DeleteError -> scope.launch { snackbarHostState.showSnackbar(event.message) }
-                is LinkDetailEvent.ArchiveSuccess, is LinkDetailEvent.DeleteSuccess -> {
+                is LinkDetailEvent.DeleteSuccess -> {
                     navController.previousBackStackEntry
                         ?.savedStateHandle
                         ?.set("refresh", true)
@@ -108,12 +107,6 @@ fun LinkDetailScreen(
                     }
                 },
                 actions = {
-                    IconButton(
-                        onClick = { viewModel.archiveLink(linkId) },
-                        enabled = !actionInProgress
-                    ) {
-                        Icon(Icons.Filled.Archive, contentDescription = "Archive")
-                    }
                     IconButton(
                         onClick = { showDeleteDialog = true },
                         enabled = !actionInProgress

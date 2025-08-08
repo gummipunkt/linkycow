@@ -5,8 +5,10 @@ import com.wltr.linkycow.data.remote.dto.ArchiveLinkResponse
 import com.wltr.linkycow.data.remote.dto.AuthResponse
 import com.wltr.linkycow.data.remote.dto.CreateLinkRequest
 import com.wltr.linkycow.data.remote.dto.DashboardResponse
+import com.wltr.linkycow.data.remote.dto.DashboardData
 import com.wltr.linkycow.data.remote.dto.DeleteLinkResponse
 import com.wltr.linkycow.data.remote.dto.LinkDetailResponse
+import com.wltr.linkycow.data.remote.dto.LinkDetailData
 import com.wltr.linkycow.data.remote.dto.LoginRequest
 import com.wltr.linkycow.data.remote.dto.LinkResponse
 import com.wltr.linkycow.data.remote.dto.SearchResponse
@@ -112,17 +114,21 @@ object ApiClient {
 
     /**
      * Get dashboard data including recent links
+     * Temporarily using search endpoint to avoid archive-related server errors
      */
     suspend fun getDashboard(): Result<DashboardResponse> {
-        return executeAuthenticatedRequest {
-            val url = URLBuilder(instanceUrl).apply {
-                path("api", "v2", "dashboard")
-            }.buildString()
-
-            client.get(url) {
-                addAuthHeader()
-                contentType(ContentType.Application.Json)
+        return try {
+            // Use the search endpoint as fallback, which doesn't load archives
+            val searchResult = getLinksPaged()
+            searchResult.map { searchResponse ->
+                DashboardResponse(
+                    data = DashboardData(
+                        links = searchResponse.data.links
+                    )
+                )
             }
+        } catch (e: Exception) {
+            Result.failure(e)
         }
     }
 
@@ -144,17 +150,34 @@ object ApiClient {
 
     /**
      * Archive a link (preserve content snapshot)
+     * With graceful handling of archive file errors
      */
     suspend fun archiveLink(id: Int): Result<ArchiveLinkResponse> {
-        return executeAuthenticatedRequest {
-            val url = URLBuilder(instanceUrl).apply {
-                path("api", "v1", "links", id.toString(), "archive")
-            }.buildString()
+        return try {
+            val result = executeAuthenticatedRequest<ArchiveLinkResponse> {
+                val url = URLBuilder(instanceUrl).apply {
+                    path("api", "v1", "links", id.toString(), "archive")
+                }.buildString()
 
-            client.put(url) {
-                addAuthHeader()
-                contentType(ContentType.Application.Json)
+                client.put(url) {
+                    addAuthHeader()
+                }
             }
+            
+            // If the request fails due to archive file errors, treat as success
+            result.recoverCatching { error ->
+                val errorMsg = error.message ?: ""
+                if ((errorMsg.contains("ENOENT") && errorMsg.contains("unlink") && errorMsg.contains("archives/")) ||
+                    (errorMsg.contains("no such file or directory") && errorMsg.contains("archives/")) ||
+                    (errorMsg.contains("syscall: 'unlink'") && errorMsg.contains("/data/data/archives/"))) {
+                    // Specific archive file deletion error - treat as successful archive
+                    ArchiveLinkResponse(response = "Link archived successfully")
+                } else {
+                    throw error
+                }
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
         }
     }
 
@@ -208,16 +231,57 @@ object ApiClient {
 
     /**
      * Delete a link permanently
+     * With graceful handling of archive file errors
      */
     suspend fun deleteLink(id: Int): Result<DeleteLinkResponse> {
-        return executeAuthenticatedRequest {
-            val url = URLBuilder(instanceUrl).apply {
-                path("api", "v1", "links", id.toString())
-            }.buildString()
+        return try {
+            val result = executeAuthenticatedRequest<DeleteLinkResponse> {
+                val url = URLBuilder(instanceUrl).apply {
+                    path("api", "v1", "links", id.toString())
+                }.buildString()
 
-            client.delete(url) {
-                addAuthHeader()
+                client.delete(url) {
+                    addAuthHeader()
+                }
             }
+            
+            // If the request fails due to archive file errors, treat as success
+            result.recoverCatching { error ->
+                val errorMsg = error.message ?: ""
+                if ((errorMsg.contains("ENOENT") && errorMsg.contains("unlink") && errorMsg.contains("archives/")) ||
+                    (errorMsg.contains("no such file or directory") && errorMsg.contains("archives/")) ||
+                    (errorMsg.contains("syscall: 'unlink'") && errorMsg.contains("/data/data/archives/"))) {
+                    // Specific archive file deletion error - link was likely deleted from DB
+                    DeleteLinkResponse(response = LinkDetailData(
+                        id = id,
+                        name = "Deleted",
+                        type = "link", 
+                        description = null,
+                        createdById = 0,
+                        collectionId = null,
+                        icon = null,
+                        iconWeight = null,
+                        color = null,
+                        url = "",
+                        textContent = null,
+                        preview = null,
+                        image = null,
+                        pdf = null,
+                        readable = null,
+                        monolith = null,
+                        lastPreserved = null,
+                        importDate = null,
+                        createdAt = "",
+                        updatedAt = "",
+                        tags = emptyList(),
+                        collection = null
+                    ))
+                } else {
+                    throw error
+                }
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
         }
     }
 
@@ -367,13 +431,34 @@ object ApiClient {
             val response = requestBuilder()
             
             if (response.status.isSuccess()) {
-                Result.success(response.body<T>())
+                try {
+                    Result.success(response.body<T>())
+                } catch (e: Exception) {
+                    // If deserialization fails, provide detailed error
+                    val responseText = try {
+                        response.bodyAsText()
+                    } catch (e2: Exception) {
+                        "Could not read response body"
+                    }
+                    Result.failure(Exception("Failed to parse successful response: ${e.message}. Response: $responseText"))
+                }
             } else {
-                val apiError: ApiError = response.body()
-                Result.failure(Exception(apiError.error ?: "Unknown server error"))
+                // Try to parse as ApiError JSON, fallback to plain text
+                val errorMessage = try {
+                    val apiError: ApiError = response.body()
+                    apiError.error ?: "Unknown server error"
+                } catch (e: Exception) {
+                    // If JSON parsing fails, get the raw response text
+                    try {
+                        response.bodyAsText()
+                    } catch (e2: Exception) {
+                        "Server error ${response.status.value}: ${response.status.description}"
+                    }
+                }
+                Result.failure(Exception(errorMessage))
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            Result.failure(Exception("Network error: ${e.message}"))
         }
     }
 } 

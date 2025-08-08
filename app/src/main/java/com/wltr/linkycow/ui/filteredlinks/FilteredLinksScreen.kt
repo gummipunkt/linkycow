@@ -66,12 +66,15 @@ fun FilteredLinksScreen(
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             items(state.links) { link ->
-                                LinkItem(
-                                    link = link,
-                                    onLinkClick = { linkId ->
-                                        navController.navigate(Screen.LinkDetail.createRoute(linkId))
-                                    }
-                                )
+                                                            LinkItem(
+                                link = link,
+                                onLinkClick = { linkId ->
+                                    navController.navigate(Screen.LinkDetail.createRoute(linkId))
+                                },
+                                onDelete = { linkId ->
+                                    viewModel.deleteLink(linkId)
+                                }
+                            )
                             }
                         }
                     }

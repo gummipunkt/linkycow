@@ -35,8 +35,8 @@
     <string name="settings_logout_cancel">Cancel</string>
     <string name="about_title">About</string>
     <string name="about_version">Version %1$s</string>
-    <string name="about_description_title">Description</string>
-    <string name="about_description">LinkyCow is an Android app for managing bookmarks with Linkwarden. With this app, you can easily search, add, and organize your saved links.</string>
+    <string name="about_description_title">About this App</string>
+    <string name="about_description">LinkyCow is your mobile gateway to Linkwarden. Save, organize, and access your bookmarks on the go with a beautiful Material You interface.</string>
     <string name="linkdetail_url">URL</string>
     <string name="linkdetail_preserved_formats">Preserved Formats &amp; Dates</string>
     <string name="linkdetail_no_preserved">No preserved formats available</string>
@@ -52,4 +52,13 @@
     <string name="linkdetail_delete_cancel">Cancel</string>
     <string name="filteredlinks_title">Links</string>
     <string name="filteredlinks_no_links">No links found for this filter.</string>
+    
+    <!-- Widget strings -->
+    <string name="widget_name">Recent Links</string>
+    <string name="widget_description">Shows your 3 most recent links</string>
+    <string name="widget_title">Recent Links</string>
+    <string name="widget_no_links">No recent links</string>
+    <string name="widget_error">Error loading links</string>
+    <string name="widget_loading">Loading...</string>
+    <string name="widget_tap_to_open">Tap to open in app</string>
 </resources>

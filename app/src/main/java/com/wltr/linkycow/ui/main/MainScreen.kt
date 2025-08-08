@@ -213,6 +213,9 @@ fun MainScreen(
                                         link = link,
                                         onLinkClick = { linkId ->
                                             navController.navigate(Screen.LinkDetail.createRoute(linkId))
+                                        },
+                                        onDelete = { linkId ->
+                                            viewModel.deleteLink(linkId)
                                         }
                                     )
                                 }

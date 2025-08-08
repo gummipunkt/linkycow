@@ -43,4 +43,29 @@ class FilteredLinksViewModel : ViewModel() {
             }
         }
     }
+
+    /**
+     * Delete a link permanently
+     */
+    fun deleteLink(linkId: Int) {
+        viewModelScope.launch {
+            try {
+                val result = ApiClient.deleteLink(linkId)
+                result.onSuccess {
+                    // Remove from current list
+                    val currentState = _uiState.value
+                    if (currentState is FilteredLinksUiState.Success) {
+                        _uiState.value = currentState.copy(
+                            links = currentState.links.filter { it.id != linkId }
+                        )
+                    }
+                }
+            } catch (e: Exception) {
+                // Error handling - could show a snackbar or toast
+                e.printStackTrace()
+            }
+        }
+    }
+
+
 } 

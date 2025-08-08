@@ -311,4 +311,33 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun onSearchQueryChanged(query: String) {
         searchQuery.value = query
     }
+
+    /**
+     * Delete a link permanently
+     */
+    fun deleteLink(linkId: Int) {
+        viewModelScope.launch {
+            try {
+                val result = ApiClient.deleteLink(linkId)
+                result.onSuccess {
+                    // Remove from all relevant lists
+                    _pagedLinks.value = _pagedLinks.value.filter { it.id != linkId }
+                    _searchResults.value = _searchResults.value.filter { it.id != linkId }
+                    
+                    // Update main UI state
+                    val currentState = _uiState.value
+                    if (currentState is DashboardUiState.Success) {
+                        _uiState.value = currentState.copy(
+                            links = currentState.links.filter { it.id != linkId }
+                        )
+                    }
+                }
+            } catch (e: Exception) {
+                // Error handling - could show a snackbar or toast
+                e.printStackTrace()
+            }
+        }
+    }
+
+
 } 

@@ -35,8 +35,17 @@
     <string name="settings_logout_cancel">Abbrechen</string>
     <string name="about_title">Über</string>
     <string name="about_version">Version %1$s</string>
-    <string name="about_description_title">Beschreibung</string>
-    <string name="about_description">LinkyCow ist eine Android-App zur Verwaltung von Bookmarks mit Linkwarden. Mit dieser App kannst du deine gespeicherten Links einfach suchen, hinzufügen und organisieren.</string>
+    <string name="about_description">LinkyCow ist dein mobiles Portal zu Linkwarden. Speichere, organisiere und greife auf deine Lesezeichen unterwegs zu mit einer wunderschönen Material You Oberfläche.</string>
+    <string name="about_description_title">Über diese App</string>
+    
+    <!-- Widget Strings -->
+    <string name="widget_name">Neueste Links</string>
+    <string name="widget_description">Zeigt deine 3 neuesten Links an</string>
+    <string name="widget_title">Neueste Links</string>
+    <string name="widget_no_links">Keine Links vorhanden</string>
+    <string name="widget_error">Fehler beim Laden der Links</string>
+    <string name="widget_loading">Laden...</string>
+    <string name="widget_tap_to_open">Tippen um in der App zu öffnen</string>
     <string name="linkdetail_url">URL</string>
     <string name="linkdetail_preserved_formats">Gespeicherte Formate &amp; Daten</string>
     <string name="linkdetail_no_preserved">Keine gespeicherten Formate verfügbar</string>

@@ -25,8 +25,6 @@ sealed class LinkDetailUiState {
 }
 
 sealed class LinkDetailEvent {
-    data class ArchiveSuccess(val message: String = "Link archived successfully.") : LinkDetailEvent()
-    data class ArchiveError(val message: String) : LinkDetailEvent()
     data class DeleteSuccess(val message: String = "Link deleted successfully.") : LinkDetailEvent()
     data class DeleteError(val message: String) : LinkDetailEvent()
 }
@@ -83,27 +81,20 @@ class LinkDetailViewModel(application: Application) : AndroidViewModel(applicati
         }
     }
 
-    fun archiveLink(linkId: Int) {
-        viewModelScope.launch {
-            _actionInProgress.value = true
-            val result = ApiClient.archiveLink(linkId)
-            result.onSuccess {
-                _eventFlow.emit(LinkDetailEvent.ArchiveSuccess())
-            }.onFailure {
-                _eventFlow.emit(LinkDetailEvent.ArchiveError("Archive failed: ${it.message}"))
-            }
-            _actionInProgress.value = false
-        }
-    }
+
 
     fun deleteLink(linkId: Int) {
         viewModelScope.launch {
             _actionInProgress.value = true
-            val result = ApiClient.deleteLink(linkId)
-            result.onSuccess {
-                _eventFlow.emit(LinkDetailEvent.DeleteSuccess())
-            }.onFailure {
-                _eventFlow.emit(LinkDetailEvent.DeleteError("Delete failed: ${it.message}"))
+            try {
+                val result = ApiClient.deleteLink(linkId)
+                result.onSuccess {
+                    _eventFlow.emit(LinkDetailEvent.DeleteSuccess())
+                }
+            } catch (e: Exception) {
+                // Error handling - same as in MainViewModel
+                e.printStackTrace()
+                _eventFlow.emit(LinkDetailEvent.DeleteError("Delete failed: ${e.message}"))
             }
             _actionInProgress.value = false
         }
